@@ -17,6 +17,7 @@ class GeminiSessionViewModel: ObservableObject {
 
   var streamingMode: StreamingMode = .glasses
   var conversationContext: String?
+  var sharedAgentBridge: AgentBridge?
 
   func startSession() async {
     guard !isGeminiActive else { return }
@@ -31,7 +32,7 @@ class GeminiSessionViewModel: ObservableObject {
     // Create the dual-agent stack
     let provider = GeminiLiveProvider()
     let audioManager = AudioManager()
-    let agentBridge = AgentBridge()
+    let agentBridge = sharedAgentBridge ?? AgentBridge()
 
     let coord = AgentCoordinator(
       voiceModelProvider: provider,

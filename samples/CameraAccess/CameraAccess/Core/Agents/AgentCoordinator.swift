@@ -31,9 +31,8 @@ class AgentCoordinator: ObservableObject {
   }
 
   func startSession(config: VoiceSessionConfig, streamingMode: StreamingMode) async -> Bool {
-    // Check agent connectivity
+    // Check agent connectivity (don't reset session — preserve context across voice/text)
     await agentBridge.checkConnection()
-    agentBridge.resetSession()
 
     // Start state observation
     startStateObservation()

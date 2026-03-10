@@ -18,7 +18,7 @@ class ChatViewModel: ObservableObject {
   @Published var toolCallStatus: ToolCallStatus = .idle
 
   // MARK: - Dependencies
-  private let agentBridge = AgentBridge()
+  let agentBridge = AgentBridge()
   let geminiSessionVM = GeminiSessionViewModel()
 
   private var sendTask: Task<Void, Never>?
@@ -82,6 +82,7 @@ class ChatViewModel: ObservableObject {
     lastAITranscript = ""
 
     geminiSessionVM.streamingMode = streamingMode
+    geminiSessionVM.sharedAgentBridge = agentBridge
 
     // Bridge text conversation context into Gemini's system instruction
     let recentMessages = messages.suffix(10)

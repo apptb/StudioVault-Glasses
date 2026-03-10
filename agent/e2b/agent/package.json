@@ -1,0 +1,9 @@
+{
+  "name": "matcha-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest",
+    "@anthropic-ai/sdk": "^0.74.0"
+  }
+}

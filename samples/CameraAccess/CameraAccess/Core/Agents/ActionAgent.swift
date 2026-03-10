@@ -1,16 +1,16 @@
 import Foundation
 
-/// ActionAgent executes tasks asynchronously via OpenClaw.
+/// ActionAgent executes tasks asynchronously via the agent backend.
 /// It receives AgentTasks (delegated from the VoiceAgent via the coordinator),
 /// executes them in the background, and reports results back.
 @MainActor
 class ActionAgent {
-  private let bridge: OpenClawBridge
+  private let bridge: AgentBridge
   private var inFlightTasks: [String: Task<Void, Never>] = [:]
 
   var onResult: ((AgentResult) -> Void)?
 
-  init(bridge: OpenClawBridge) {
+  init(bridge: AgentBridge) {
     self.bridge = bridge
   }
 

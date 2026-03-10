@@ -5,11 +5,9 @@ struct SettingsView: View {
   private let settings = SettingsManager.shared
 
   @State private var geminiAPIKey: String = ""
-  @State private var openClawHost: String = ""
-  @State private var openClawPort: String = ""
-  @State private var openClawHookToken: String = ""
-  @State private var openClawGatewayToken: String = ""
   @State private var geminiSystemPrompt: String = ""
+  @State private var agentBaseURL: String = ""
+  @State private var agentToken: String = ""
   @State private var webrtcSignalingURL: String = ""
   @State private var speakerOutputEnabled: Bool = false
   @State private var showResetConfirmation = false
@@ -35,12 +33,12 @@ struct SettingsView: View {
             .frame(minHeight: 200)
         }
 
-        Section(header: Text("OpenClaw"), footer: Text("Connect to an OpenClaw gateway running on your Mac for agentic tool-calling.")) {
+        Section(header: Text("Agent"), footer: Text("Connect to the Matcha agent API (E2B + Claude Agent SDK) for task execution.")) {
           VStack(alignment: .leading, spacing: 4) {
-            Text("Host")
+            Text("Base URL")
               .font(.caption)
-              .foregroundColor(.secondary)
-            TextField("http://your-mac.local", text: $openClawHost)
+              .foregroundStyle(.secondary)
+            TextField("https://your-deployment.vercel.app", text: $agentBaseURL)
               .autocapitalization(.none)
               .disableAutocorrection(true)
               .keyboardType(.URL)
@@ -48,29 +46,10 @@ struct SettingsView: View {
           }
 
           VStack(alignment: .leading, spacing: 4) {
-            Text("Port")
+            Text("API Token")
               .font(.caption)
-              .foregroundColor(.secondary)
-            TextField("18789", text: $openClawPort)
-              .keyboardType(.numberPad)
-              .font(.system(.body, design: .monospaced))
-          }
-
-          VStack(alignment: .leading, spacing: 4) {
-            Text("Hook Token")
-              .font(.caption)
-              .foregroundColor(.secondary)
-            TextField("Hook token", text: $openClawHookToken)
-              .autocapitalization(.none)
-              .disableAutocorrection(true)
-              .font(.system(.body, design: .monospaced))
-          }
-
-          VStack(alignment: .leading, spacing: 4) {
-            Text("Gateway Token")
-              .font(.caption)
-              .foregroundColor(.secondary)
-            TextField("Gateway auth token", text: $openClawGatewayToken)
+              .foregroundStyle(.secondary)
+            TextField("Shared secret token", text: $agentToken)
               .autocapitalization(.none)
               .disableAutocorrection(true)
               .font(.system(.body, design: .monospaced))
@@ -135,10 +114,8 @@ struct SettingsView: View {
   private func loadCurrentValues() {
     geminiAPIKey = settings.geminiAPIKey
     geminiSystemPrompt = settings.geminiSystemPrompt
-    openClawHost = settings.openClawHost
-    openClawPort = String(settings.openClawPort)
-    openClawHookToken = settings.openClawHookToken
-    openClawGatewayToken = settings.openClawGatewayToken
+    agentBaseURL = settings.agentBaseURL
+    agentToken = settings.agentToken
     webrtcSignalingURL = settings.webrtcSignalingURL
     speakerOutputEnabled = settings.speakerOutputEnabled
   }
@@ -146,12 +123,8 @@ struct SettingsView: View {
   private func save() {
     settings.geminiAPIKey = geminiAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.geminiSystemPrompt = geminiSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-    settings.openClawHost = openClawHost.trimmingCharacters(in: .whitespacesAndNewlines)
-    if let port = Int(openClawPort.trimmingCharacters(in: .whitespacesAndNewlines)) {
-      settings.openClawPort = port
-    }
-    settings.openClawHookToken = openClawHookToken.trimmingCharacters(in: .whitespacesAndNewlines)
-    settings.openClawGatewayToken = openClawGatewayToken.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.agentBaseURL = agentBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.agentToken = agentToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.webrtcSignalingURL = webrtcSignalingURL.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.speakerOutputEnabled = speakerOutputEnabled
   }

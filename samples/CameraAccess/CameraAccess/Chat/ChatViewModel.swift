@@ -18,7 +18,7 @@ class ChatViewModel: ObservableObject {
   @Published var toolCallStatus: ToolCallStatus = .idle
 
   // MARK: - Dependencies
-  private let openClawBridge = OpenClawBridge()
+  private let agentBridge = AgentBridge()
   let geminiSessionVM = GeminiSessionViewModel()
 
   private var sendTask: Task<Void, Never>?
@@ -31,7 +31,7 @@ class ChatViewModel: ObservableObject {
   // Glasses streaming view sets its own mode when launched separately
   var streamingMode: StreamingMode = .iPhone
 
-  // MARK: - Text Mode (sends directly to OpenClaw agent)
+  // MARK: - Text Mode (sends directly to agent backend)
 
   func sendMessage() {
     let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -45,12 +45,12 @@ class ChatViewModel: ObservableObject {
     messages.append(ChatMessage(role: .assistant, text: "", status: .streaming))
 
     sendTask = Task {
-      // Check OpenClaw connectivity first
-      if openClawBridge.connectionState == .notConfigured {
-        await openClawBridge.checkConnection()
+      // Check agent connectivity first
+      if agentBridge.connectionState == .notConfigured {
+        await agentBridge.checkConnection()
       }
 
-      let result = await openClawBridge.delegateTask(task: text)
+      let result = await agentBridge.delegateTask(task: text)
 
       switch result {
       case .success(let response):
@@ -69,7 +69,7 @@ class ChatViewModel: ObservableObject {
     }
   }
 
-  // MARK: - Voice Mode (Gemini Live + OpenClaw dual-agent)
+  // MARK: - Voice Mode (Gemini Live + agent dual-agent)
 
   func startVoiceMode() async {
     guard !isVoiceModeActive else { return }
@@ -150,7 +150,7 @@ class ChatViewModel: ObservableObject {
     voiceObservation?.cancel()
     voiceObservation = nil
 
-    // Bridge voice transcripts into OpenClaw's conversation history
+    // Bridge voice transcripts into agent's conversation history
     let contextMessages = voiceTranscripts.compactMap { transcript -> [String: String]? in
       let text = transcript.text.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !text.isEmpty else { return nil }
@@ -158,7 +158,7 @@ class ChatViewModel: ObservableObject {
       return ["role": role, "content": text]
     }
     if !contextMessages.isEmpty {
-      openClawBridge.injectContext(contextMessages)
+      agentBridge.injectContext(contextMessages)
     }
 
     for transcript in voiceTranscripts {

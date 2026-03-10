@@ -2,14 +2,14 @@ import Foundation
 
 @MainActor
 class ToolCallRouter {
-  private let bridge: OpenClawBridge
+  private let bridge: AgentBridge
   private var inFlightTasks: [String: Task<Void, Never>] = [:]
 
-  init(bridge: OpenClawBridge) {
+  init(bridge: AgentBridge) {
     self.bridge = bridge
   }
 
-  /// Route a tool call from Gemini to OpenClaw. Calls sendResponse with the
+  /// Route a tool call from Gemini to the agent. Calls sendResponse with the
   /// JSON dictionary to send back as a toolResponse message.
   func handleToolCall(
     _ call: GeminiFunctionCall,

@@ -8,8 +8,8 @@ struct GeminiStatusBar: View {
       // Gemini connection pill
       StatusPill(color: geminiStatusColor, text: geminiStatusText)
 
-      // OpenClaw connection pill
-      StatusPill(color: openClawStatusColor, text: openClawStatusText)
+      // Agent connection pill
+      StatusPill(color: agentStatusColor, text: agentStatusText)
     }
   }
 
@@ -31,8 +31,8 @@ struct GeminiStatusBar: View {
     }
   }
 
-  private var openClawStatusColor: Color {
-    switch geminiVM.openClawConnectionState {
+  private var agentStatusColor: Color {
+    switch geminiVM.agentConnectionState {
     case .connected: return .green
     case .checking: return .yellow
     case .unreachable: return .red
@@ -40,12 +40,12 @@ struct GeminiStatusBar: View {
     }
   }
 
-  private var openClawStatusText: String {
-    switch geminiVM.openClawConnectionState {
-    case .connected: return "OpenClaw"
-    case .checking: return "OpenClaw..."
-    case .unreachable: return "OpenClaw Off"
-    case .notConfigured: return "No OpenClaw"
+  private var agentStatusText: String {
+    switch geminiVM.agentConnectionState {
+    case .connected: return "Agent"
+    case .checking: return "Agent..."
+    case .unreachable: return "Agent Off"
+    case .notConfigured: return "No Agent"
     }
   }
 }

@@ -10,7 +10,7 @@ class GeminiSessionViewModel: ObservableObject {
   @Published var userTranscript: String = ""
   @Published var aiTranscript: String = ""
   @Published var toolCallStatus: ToolCallStatus = .idle
-  @Published var openClawConnectionState: OpenClawConnectionState = .notConfigured
+  @Published var agentConnectionState: AgentConnectionState = .notConfigured
 
   private var coordinator: AgentCoordinator?
   private var stateObservation: Task<Void, Never>?
@@ -31,12 +31,12 @@ class GeminiSessionViewModel: ObservableObject {
     // Create the dual-agent stack
     let provider = GeminiLiveProvider()
     let audioManager = AudioManager()
-    let openClawBridge = OpenClawBridge()
+    let agentBridge = AgentBridge()
 
     let coord = AgentCoordinator(
       voiceModelProvider: provider,
       audioManager: audioManager,
-      openClawBridge: openClawBridge
+      agentBridge: agentBridge
     )
     self.coordinator = coord
 
@@ -60,7 +60,7 @@ class GeminiSessionViewModel: ObservableObject {
         self.userTranscript = coord.voiceAgent.userTranscript
         self.aiTranscript = coord.voiceAgent.aiTranscript
         self.toolCallStatus = coord.toolCallStatus
-        self.openClawConnectionState = coord.openClawConnectionState
+        self.agentConnectionState = coord.agentConnectionState
       }
     }
 

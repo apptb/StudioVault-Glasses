@@ -12,28 +12,28 @@ import SwiftUI
 class AgentCoordinator: ObservableObject {
   let voiceAgent: VoiceAgent
   let actionAgent: ActionAgent
-  private let openClawBridge: OpenClawBridge
+  private let agentBridge: AgentBridge
 
   @Published var toolCallStatus: ToolCallStatus = .idle
-  @Published var openClawConnectionState: OpenClawConnectionState = .notConfigured
+  @Published var agentConnectionState: AgentConnectionState = .notConfigured
 
   private var stateObservation: Task<Void, Never>?
 
   init(
     voiceModelProvider: VoiceModelProvider,
     audioManager: AudioManager,
-    openClawBridge: OpenClawBridge
+    agentBridge: AgentBridge
   ) {
-    self.openClawBridge = openClawBridge
+    self.agentBridge = agentBridge
     self.voiceAgent = VoiceAgent(provider: voiceModelProvider, audioManager: audioManager)
-    self.actionAgent = ActionAgent(bridge: openClawBridge)
+    self.actionAgent = ActionAgent(bridge: agentBridge)
     wireAgents()
   }
 
   func startSession(config: VoiceSessionConfig, streamingMode: StreamingMode) async -> Bool {
-    // Check OpenClaw connectivity
-    await openClawBridge.checkConnection()
-    openClawBridge.resetSession()
+    // Check agent connectivity
+    await agentBridge.checkConnection()
+    agentBridge.resetSession()
 
     // Start state observation
     startStateObservation()
@@ -84,8 +84,8 @@ class AgentCoordinator: ObservableObject {
       while !Task.isCancelled {
         try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
         guard !Task.isCancelled, let self else { break }
-        self.toolCallStatus = self.openClawBridge.lastToolCallStatus
-        self.openClawConnectionState = self.openClawBridge.connectionState
+        self.toolCallStatus = self.agentBridge.lastToolCallStatus
+        self.agentConnectionState = self.agentBridge.connectionState
       }
     }
   }

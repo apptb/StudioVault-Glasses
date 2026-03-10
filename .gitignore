@@ -1,5 +1,11 @@
 .DS_Store
 
+# Agent API (Vercel/Next.js)
+agent/node_modules/
+agent/.next/
+agent/.env
+agent/.env.local
+
 # Android
 samples/CameraAccessAndroid/app/src/main/java/**/Secrets.kt
 samples/CameraAccessAndroid/local.properties

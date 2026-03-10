@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "e2b": "^1.4.5",
+    "e2b": "^2.14.1",
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

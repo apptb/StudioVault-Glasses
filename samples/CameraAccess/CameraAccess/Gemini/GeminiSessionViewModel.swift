@@ -11,11 +11,8 @@ class GeminiSessionViewModel: ObservableObject {
   @Published var aiTranscript: String = ""
   @Published var toolCallStatus: ToolCallStatus = .idle
   @Published var openClawConnectionState: OpenClawConnectionState = .notConfigured
-  private let geminiService = GeminiLiveService()
-  private let openClawBridge = OpenClawBridge()
-  private var toolCallRouter: ToolCallRouter?
-  private let audioManager = AudioManager()
-  private var lastVideoFrameTime: Date = .distantPast
+
+  private var coordinator: AgentCoordinator?
   private var stateObservation: Task<Void, Never>?
 
   var streamingMode: StreamingMode = .glasses
@@ -30,51 +27,20 @@ class GeminiSessionViewModel: ObservableObject {
 
     isGeminiActive = true
 
-    // Wire audio callbacks
-    audioManager.onAudioCaptured = { [weak self] data in
-      guard let self else { return }
-      Task { @MainActor in
-        // Mute mic while model speaks when speaker is on the phone
-        // (loudspeaker + co-located mic overwhelms iOS echo cancellation)
-        let speakerOnPhone = self.streamingMode == .iPhone || SettingsManager.shared.speakerOutputEnabled
-        if speakerOnPhone && self.geminiService.isModelSpeaking { return }
-        self.geminiService.sendAudio(data: data)
-      }
-    }
+    // Create the dual-agent stack
+    let provider = GeminiLiveProvider()
+    let audioManager = AudioManager()
+    let openClawBridge = OpenClawBridge()
 
-    geminiService.onAudioReceived = { [weak self] data in
-      self?.audioManager.playAudio(data: data)
-    }
-
-    geminiService.onInterrupted = { [weak self] in
-      self?.audioManager.stopPlayback()
-    }
-
-    geminiService.onTurnComplete = { [weak self] in
-      guard let self else { return }
-      Task { @MainActor in
-        // Clear user transcript when AI finishes responding
-        self.userTranscript = ""
-      }
-    }
-
-    geminiService.onInputTranscription = { [weak self] text in
-      guard let self else { return }
-      Task { @MainActor in
-        self.userTranscript += text
-        self.aiTranscript = ""
-      }
-    }
-
-    geminiService.onOutputTranscription = { [weak self] text in
-      guard let self else { return }
-      Task { @MainActor in
-        self.aiTranscript += text
-      }
-    }
+    let coord = AgentCoordinator(
+      voiceModelProvider: provider,
+      audioManager: audioManager,
+      openClawBridge: openClawBridge
+    )
+    self.coordinator = coord
 
     // Handle unexpected disconnection
-    geminiService.onDisconnected = { [weak self] reason in
+    coord.voiceAgent.onDisconnected = { [weak self] reason in
       guard let self else { return }
       Task { @MainActor in
         guard self.isGeminiActive else { return }
@@ -83,80 +49,35 @@ class GeminiSessionViewModel: ObservableObject {
       }
     }
 
-    // Check OpenClaw connectivity and start fresh session
-    await openClawBridge.checkConnection()
-    openClawBridge.resetSession()
-
-    // Wire tool call handling
-    toolCallRouter = ToolCallRouter(bridge: openClawBridge)
-
-    geminiService.onToolCall = { [weak self] toolCall in
-      guard let self else { return }
-      Task { @MainActor in
-        for call in toolCall.functionCalls {
-          self.toolCallRouter?.handleToolCall(call) { [weak self] response in
-            self?.geminiService.sendToolResponse(response)
-          }
-        }
-      }
-    }
-
-    geminiService.onToolCallCancellation = { [weak self] cancellation in
-      guard let self else { return }
-      Task { @MainActor in
-        self.toolCallRouter?.cancelToolCalls(ids: cancellation.ids)
-      }
-    }
-
-    // Observe service state
+    // Start state observation (poll coordinator state -> @Published properties)
     stateObservation = Task { [weak self] in
-      guard let self else { return }
       while !Task.isCancelled {
         try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        guard !Task.isCancelled else { break }
-        self.connectionState = self.geminiService.connectionState
-        self.isModelSpeaking = self.geminiService.isModelSpeaking
-        self.toolCallStatus = self.openClawBridge.lastToolCallStatus
-        self.openClawConnectionState = self.openClawBridge.connectionState
+        guard !Task.isCancelled, let self, let coord = self.coordinator else { break }
+        self.connectionState = coord.voiceAgent.connectionState.asGeminiState
+        self.isModelSpeaking = coord.voiceAgent.isModelSpeaking
+        self.userTranscript = coord.voiceAgent.userTranscript
+        self.aiTranscript = coord.voiceAgent.aiTranscript
+        self.toolCallStatus = coord.toolCallStatus
+        self.openClawConnectionState = coord.openClawConnectionState
       }
     }
 
-    // Setup audio
-    do {
-      try audioManager.setupAudioSession(useIPhoneMode: streamingMode == .iPhone)
-    } catch {
-      errorMessage = "Audio setup failed: \(error.localizedDescription)"
-      isGeminiActive = false
-      return
-    }
+    // Start the session
+    let config = VoiceSessionConfig.geminiDefault
+    let success = await coord.startSession(config: config, streamingMode: streamingMode)
 
-    // Connect to Gemini and wait for setupComplete
-    let setupOk = await geminiService.connect()
-
-    if !setupOk {
+    if !success {
       let msg: String
-      if case .error(let err) = geminiService.connectionState {
+      if case .error(let err) = coord.voiceAgent.connectionState {
         msg = err
       } else {
         msg = "Failed to connect to Gemini"
       }
       errorMessage = msg
-      geminiService.disconnect()
       stateObservation?.cancel()
       stateObservation = nil
-      isGeminiActive = false
-      connectionState = .disconnected
-      return
-    }
-
-    // Start mic capture
-    do {
-      try audioManager.startCapture()
-    } catch {
-      errorMessage = "Mic capture failed: \(error.localizedDescription)"
-      geminiService.disconnect()
-      stateObservation?.cancel()
-      stateObservation = nil
+      coordinator = nil
       isGeminiActive = false
       connectionState = .disconnected
       return
@@ -164,10 +85,8 @@ class GeminiSessionViewModel: ObservableObject {
   }
 
   func stopSession() {
-    toolCallRouter?.cancelAll()
-    toolCallRouter = nil
-    audioManager.stopCapture()
-    geminiService.disconnect()
+    coordinator?.stopSession()
+    coordinator = nil
     stateObservation?.cancel()
     stateObservation = nil
     isGeminiActive = false
@@ -180,10 +99,7 @@ class GeminiSessionViewModel: ObservableObject {
 
   func sendVideoFrameIfThrottled(image: UIImage) {
     guard isGeminiActive, connectionState == .ready else { return }
-    let now = Date()
-    guard now.timeIntervalSince(lastVideoFrameTime) >= GeminiConfig.videoFrameInterval else { return }
-    lastVideoFrameTime = now
-    geminiService.sendVideoFrame(image: image)
+    coordinator?.sendVideoFrame(image)
   }
 
 }

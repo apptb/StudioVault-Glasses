@@ -18,7 +18,7 @@ try {
   for await (const message of query({
     prompt,
     options: {
-      model: "claude-sonnet-4-6-20250527",
+      model: "claude-sonnet-4-6",
       allowedTools: [
         "Read",
         "Write",

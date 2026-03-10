@@ -18,11 +18,10 @@ class ChatViewModel: ObservableObject {
   @Published var toolCallStatus: ToolCallStatus = .idle
 
   // MARK: - Dependencies
-  private let chatService = GeminiChatService()
   private let openClawBridge = OpenClawBridge()
   let geminiSessionVM = GeminiSessionViewModel()
 
-  private var streamTask: Task<Void, Never>?
+  private var sendTask: Task<Void, Never>?
   private var voiceObservation: Task<Void, Never>?
   private var voiceTranscripts: [(role: ChatMessageRole, text: String)] = []
   private var lastUserTranscript: String = ""
@@ -30,7 +29,7 @@ class ChatViewModel: ObservableObject {
 
   var streamingMode: StreamingMode = .glasses
 
-  // MARK: - Text Mode
+  // MARK: - Text Mode (sends directly to OpenClaw agent)
 
   func sendMessage() {
     let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,28 +39,35 @@ class ChatViewModel: ObservableObject {
     isSending = true
     errorMessage = nil
 
-    // Append user message
     messages.append(ChatMessage(role: .user, text: text))
+    messages.append(ChatMessage(role: .assistant, text: "", status: .streaming))
 
-    // Append streaming placeholder
-    let assistantId = UUID().uuidString
-    messages.append(ChatMessage(id: assistantId, role: .assistant, text: "", status: .streaming))
+    sendTask = Task {
+      // Check OpenClaw connectivity first
+      if openClawBridge.connectionState == .notConfigured {
+        await openClawBridge.checkConnection()
+      }
 
-    streamTask = Task {
-      do {
-        let stream = chatService.sendMessage(text)
-        try await consumeStream(stream, assistantMessageId: assistantId)
-      } catch {
+      let result = await openClawBridge.delegateTask(task: text)
+
+      switch result {
+      case .success(let response):
         updateLastAssistantMessage { msg in
-          msg.status = .error(error.localizedDescription)
-          if msg.text.isEmpty { msg.text = "Failed to get response." }
+          msg.text = response
+          msg.status = .complete
+        }
+      case .failure(let error):
+        updateLastAssistantMessage { msg in
+          msg.text = "Failed to reach agent: \(error)"
+          msg.status = .error(error)
         }
       }
+
       isSending = false
     }
   }
 
-  // MARK: - Voice Mode
+  // MARK: - Voice Mode (Gemini Live + OpenClaw dual-agent)
 
   func startVoiceMode() async {
     guard !isVoiceModeActive else { return }
@@ -72,7 +78,6 @@ class ChatViewModel: ObservableObject {
 
     geminiSessionVM.streamingMode = streamingMode
 
-    // Start voice state observation
     voiceObservation = Task { [weak self] in
       while !Task.isCancelled {
         try? await Task.sleep(nanoseconds: 100_000_000)
@@ -81,23 +86,20 @@ class ChatViewModel: ObservableObject {
         self.isModelSpeaking = self.geminiSessionVM.isModelSpeaking
         self.toolCallStatus = self.geminiSessionVM.toolCallStatus
 
-        // Track transcript pairs for chat history
         let newUser = self.geminiSessionVM.userTranscript
         let newAI = self.geminiSessionVM.aiTranscript
 
-        // When user transcript appears
         if !newUser.isEmpty && newUser != self.lastUserTranscript {
           self.lastUserTranscript = newUser
         }
         self.userTranscript = newUser
 
-        // When AI transcript appears
         if !newAI.isEmpty && newAI != self.lastAITranscript {
           self.lastAITranscript = newAI
         }
         self.aiTranscript = newAI
 
-        // When a turn completes (transcripts get cleared), snapshot the pair
+        // Snapshot transcript pair when turn completes (transcripts cleared)
         if newUser.isEmpty && !self.lastUserTranscript.isEmpty {
           if !self.lastUserTranscript.isEmpty {
             self.voiceTranscripts.append((role: .user, text: self.lastUserTranscript))
@@ -114,7 +116,6 @@ class ChatViewModel: ObservableObject {
     await geminiSessionVM.startSession()
 
     if !geminiSessionVM.isGeminiActive {
-      // Failed to start
       isVoiceModeActive = false
       voiceObservation?.cancel()
       voiceObservation = nil
@@ -123,7 +124,6 @@ class ChatViewModel: ObservableObject {
   }
 
   func stopVoiceMode() {
-    // Capture any remaining transcript pair
     if !lastUserTranscript.isEmpty {
       voiceTranscripts.append((role: .user, text: lastUserTranscript))
     }
@@ -135,7 +135,6 @@ class ChatViewModel: ObservableObject {
     voiceObservation?.cancel()
     voiceObservation = nil
 
-    // Append voice transcripts to chat history
     for transcript in voiceTranscripts {
       if !transcript.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         messages.append(ChatMessage(role: transcript.role, text: transcript.text))
@@ -159,66 +158,8 @@ class ChatViewModel: ObservableObject {
 
   // MARK: - Private
 
-  private func consumeStream(_ stream: AsyncThrowingStream<GeminiChatEvent, Error>, assistantMessageId: String) async throws {
-    for try await event in stream {
-      guard !Task.isCancelled else { break }
-      switch event {
-      case .textDelta(let text):
-        updateLastAssistantMessage { msg in
-          msg.text += text
-        }
-
-      case .toolCall(let id, let name, let args):
-        // Show tool call in chat
-        updateLastAssistantMessage { msg in
-          msg.status = .complete
-        }
-        let taskDesc = args["task"] as? String ?? String(describing: args)
-        messages.append(ChatMessage(role: .toolCall, text: "Running: \(name)", status: .streaming, toolCallName: name))
-
-        // Execute tool
-        let result = await openClawBridge.delegateTask(task: taskDesc, toolName: name)
-
-        // Update tool call message with result
-        updateLastMessage(where: { $0.role == .toolCall && $0.toolCallName == name && $0.status == .streaming }) { msg in
-          switch result {
-          case .success(let text):
-            msg.text = "Done: \(name)"
-            msg.toolCallResult = text
-            msg.status = .complete
-          case .failure(let err):
-            msg.text = "Failed: \(name)"
-            msg.toolCallResult = err
-            msg.status = .error(err)
-          }
-        }
-
-        // Send tool result back to Gemini and continue streaming
-        let resultValue = result.responseValue
-        let followUpId = UUID().uuidString
-        messages.append(ChatMessage(id: followUpId, role: .assistant, text: "", status: .streaming))
-
-        let followUp = chatService.sendToolResponse(callId: id, name: name, result: resultValue)
-        try await consumeStream(followUp, assistantMessageId: followUpId)
-        return // The recursive call handles the rest
-
-      case .done:
-        updateLastAssistantMessage { msg in
-          if msg.status == .streaming {
-            msg.status = .complete
-          }
-        }
-      }
-    }
-  }
-
   private func updateLastAssistantMessage(_ update: (inout ChatMessage) -> Void) {
     guard let idx = messages.lastIndex(where: { $0.role == .assistant }) else { return }
-    update(&messages[idx])
-  }
-
-  private func updateLastMessage(where predicate: (ChatMessage) -> Bool, _ update: (inout ChatMessage) -> Void) {
-    guard let idx = messages.lastIndex(where: predicate) else { return }
     update(&messages[idx])
   }
 }

@@ -27,7 +27,9 @@ class ChatViewModel: ObservableObject {
   private var lastUserTranscript: String = ""
   private var lastAITranscript: String = ""
 
-  var streamingMode: StreamingMode = .glasses
+  // Voice from chat always uses iPhone mode (speaker + mic co-located on phone)
+  // Glasses streaming view sets its own mode when launched separately
+  var streamingMode: StreamingMode = .iPhone
 
   // MARK: - Text Mode (sends directly to OpenClaw agent)
 

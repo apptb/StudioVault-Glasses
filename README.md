@@ -1,8 +1,8 @@
-# Intent OS
+# Matcha
 
-An open-source, agent-native voice-and-vision framework. Turn any audio/visual device -- earbuds, smart glasses, pendants, phones -- into an always-on AI companion that can perceive, understand, and act on your behalf.
+An agent-native voice-and-vision framework. Turn any audio/visual device -- earbuds, smart glasses, pendants, phones -- into an always-on AI companion that can perceive, understand, and act on your behalf.
 
-Built by [Intentlabs](https://github.com/Intent-Lab). Evolved from [VisionClaw](https://github.com/Intent-Lab/VisionClaw).
+Built by [Intentlabs](https://github.com/Intent-Lab).
 
 **Supported platforms:** iOS (iPhone) and Android
 
@@ -14,17 +14,17 @@ Today's voice AI apps (ChatGPT Voice, Gemini Live, Sesame) are **conversational 
 
 Meanwhile, agent frameworks (OpenClaw, Manus, Claude Code) can execute complex tasks but have no real-time voice interface.
 
-**No consumer product today combines real-time voice conversation with general-purpose agent execution.** Intent OS fills this gap.
+**No consumer product today combines real-time voice conversation with general-purpose agent execution.** Matcha fills this gap.
 
 ---
 
 ## Core Architecture: Dual-Agent System
 
-Intent OS separates real-time voice interaction from asynchronous task execution, allowing both to run simultaneously without blocking each other.
+Matcha separates real-time voice interaction from asynchronous task execution, allowing both to run simultaneously without blocking each other.
 
 ```
                          +-----------------------------+
-                         |       INTENT OS CORE        |
+                         |       MATCHA CORE        |
                          |                             |
  User ---- Audio ------> |  +---------------------+   |
  Device    Stream        |  |   VOICE AGENT        |   |
@@ -73,7 +73,7 @@ The user is never left in silence. The agent is never limited to shallow answers
 
 ## Supported Hardware
 
-Intent OS is device-agnostic. It connects to any audio I/O device:
+Matcha is device-agnostic. It connects to any audio I/O device:
 
 | Device | Audio In | Audio Out | Video In | Status |
 |--------|----------|-----------|----------|--------|
@@ -87,7 +87,7 @@ Intent OS is device-agnostic. It connects to any audio I/O device:
 
 ## Supported Voice Models
 
-Intent OS is model-agnostic:
+Matcha is model-agnostic:
 
 | Provider | Model | Status |
 |----------|-------|--------|
@@ -101,8 +101,8 @@ Intent OS is model-agnostic:
 ### 1. Clone and open
 
 ```bash
-git clone https://github.com/Intent-Lab/IntentOS.git
-cd IntentOS/samples/CameraAccess
+git clone https://github.com/Intent-Lab/matcha.git
+cd matcha/samples/CameraAccess
 open CameraAccess.xcodeproj
 ```
 
@@ -146,7 +146,7 @@ Then in the app:
 ### 1. Clone and open
 
 ```bash
-git clone https://github.com/Intent-Lab/IntentOS.git
+git clone https://github.com/Intent-Lab/matcha.git
 ```
 
 Open `samples/CameraAccessAndroid/` in Android Studio.
@@ -194,7 +194,7 @@ Enable Developer Mode in the Meta AI app (same steps as iOS above), then:
 
 ## Setup: OpenClaw (Optional)
 
-[OpenClaw](https://github.com/nichochar/openclaw) gives Intent OS the ability to take real-world actions: send messages, search the web, manage lists, control smart home devices, and more. Without it, the AI is voice + vision only (no task execution).
+[OpenClaw](https://github.com/nichochar/openclaw) gives Matcha the ability to take real-world actions: send messages, search the web, manage lists, control smart home devices, and more. Without it, the AI is voice + vision only (no task execution).
 
 ### 1. Install and configure OpenClaw
 

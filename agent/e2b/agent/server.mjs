@@ -393,7 +393,7 @@ const server = createServer(async (req, res) => {
   }
 
   // Parse body for POST endpoints
-  if (req.method === "POST" && (req.url === "/message" || req.url === "/stream")) {
+  if (req.method === "POST" && (req.url === "/message" || req.url === "/stream" || req.url === "/context")) {
     let body = "";
     for await (const chunk of req) body += chunk;
 
@@ -410,6 +410,31 @@ const server = createServer(async (req, res) => {
     if (AUTH_TOKEN && parsed.token !== AUTH_TOKEN) {
       res.writeHead(401, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Unauthorized" }));
+      return;
+    }
+
+    // --- POST /context (inject conversation history from voice mode) ---
+    if (req.url === "/context") {
+      const { messages } = parsed;
+      if (!Array.isArray(messages)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "messages array is required" }));
+        return;
+      }
+
+      // Convert to Anthropic message format and prepend to conversation
+      for (const msg of messages) {
+        if (msg.role && msg.content) {
+          conversationMessages.push({
+            role: msg.role === "user" ? "user" : "assistant",
+            content: msg.content,
+          });
+        }
+      }
+
+      console.log(`[Server] Injected ${messages.length} context messages (total: ${conversationMessages.length})`);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, messageCount: conversationMessages.length }));
       return;
     }
 

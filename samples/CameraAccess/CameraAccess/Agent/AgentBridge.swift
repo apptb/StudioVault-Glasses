@@ -92,13 +92,46 @@ class AgentBridge: ObservableObject {
     return "agent:main:glass:\(ts)"
   }
 
-  /// Inject prior conversation context (e.g. voice transcripts) into history
+  /// Inject prior conversation context (e.g. voice transcripts) into both
+  /// the iOS-side history (for Vercel fallback) and the E2B sandbox (for direct path)
   func injectContext(_ messages: [[String: String]]) {
+    // Update iOS-side history (used by Vercel fallback)
     conversationHistory.insert(contentsOf: messages, at: 0)
     if conversationHistory.count > maxHistoryTurns * 2 {
       conversationHistory = Array(conversationHistory.suffix(maxHistoryTurns * 2))
     }
     NSLog("[Agent] Injected %d context messages (total: %d)", messages.count, conversationHistory.count)
+
+    // Also inject into E2B sandbox's in-memory conversation state
+    Task {
+      await injectContextToSandbox(messages)
+    }
+  }
+
+  /// Send context messages to the E2B sandbox so its in-memory conversation
+  /// state includes voice transcripts and prior context
+  private func injectContextToSandbox(_ messages: [[String: String]]) async {
+    guard let sandboxUrl = sandboxUrl, let authToken = sandboxAuthToken else {
+      NSLog("[Agent] No sandbox to inject context into")
+      return
+    }
+    guard let url = URL(string: "\(sandboxUrl)/context") else { return }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.timeoutInterval = 10
+
+    let body: [String: Any] = ["messages": messages, "token": authToken]
+    do {
+      request.httpBody = try JSONSerialization.data(withJSONObject: body)
+      let (_, response) = try await session.data(for: request)
+      if let http = response as? HTTPURLResponse {
+        NSLog("[Agent] Context injected to sandbox: HTTP %d", http.statusCode)
+      }
+    } catch {
+      NSLog("[Agent] Failed to inject context to sandbox: %@", error.localizedDescription)
+    }
   }
 
   // MARK: - Sandbox Init

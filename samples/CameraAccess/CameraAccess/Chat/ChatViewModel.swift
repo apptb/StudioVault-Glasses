@@ -28,6 +28,7 @@ class ChatViewModel: ObservableObject {
   private var activeAIBubbleId: String?
   private var lastUserTranscript: String = ""
   private var lastAITranscript: String = ""
+  private var voiceSessionStartIndex: Int = 0
 
   // Voice from chat always uses iPhone mode (speaker + mic co-located on phone)
   var streamingMode: StreamingMode = .iPhone
@@ -107,6 +108,7 @@ class ChatViewModel: ObservableObject {
     activeAIBubbleId = nil
     lastUserTranscript = ""
     lastAITranscript = ""
+    voiceSessionStartIndex = messages.count
 
     geminiSessionVM.streamingMode = streamingMode
     geminiSessionVM.sharedAgentBridge = agentBridge
@@ -230,9 +232,10 @@ class ChatViewModel: ObservableObject {
     RemoteLogger.shared.log("session:voice_end")
     geminiSessionVM.stopSession()
 
-    // Bridge voice messages into agent's conversation history
-    // Collect all messages added during this voice session (user + assistant after voice started)
-    let voiceMessages = messages.compactMap { msg -> [String: String]? in
+    // Bridge voice session messages into the agent's conversation history
+    // Only inject messages added during this voice session (not prior text chat)
+    let voiceSessionMessages = Array(messages.suffix(from: voiceSessionStartIndex))
+    let contextMessages = voiceSessionMessages.compactMap { msg -> [String: String]? in
       let text = msg.text.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !text.isEmpty else { return nil }
       switch msg.role {
@@ -241,8 +244,8 @@ class ChatViewModel: ObservableObject {
       case .toolCall: return nil
       }
     }
-    if !voiceMessages.isEmpty {
-      agentBridge.injectContext(voiceMessages)
+    if !contextMessages.isEmpty {
+      agentBridge.injectContext(contextMessages)
     }
 
     isVoiceModeActive = false

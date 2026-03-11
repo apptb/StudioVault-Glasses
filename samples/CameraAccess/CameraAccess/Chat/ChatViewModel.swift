@@ -139,12 +139,14 @@ class ChatViewModel: ObservableObject {
         if !newUser.isEmpty {
           if newUser != self.lastUserTranscript {
             if self.activeUserBubbleId == nil {
-              // New user turn: create a bubble
+              // New user turn starting -- reset AI tracking so next AI response is fresh
+              self.lastAITranscript = ""
+              self.activeAIBubbleId = nil
+
               let bubble = ChatMessage(role: .user, text: newUser, status: .streaming)
               self.messages.append(bubble)
               self.activeUserBubbleId = bubble.id
             } else {
-              // Update existing bubble
               self.updateMessage(id: self.activeUserBubbleId!) { msg in
                 msg.text = newUser
               }
@@ -154,33 +156,28 @@ class ChatViewModel: ObservableObject {
         }
 
         // --- Live AI bubble ---
-        if !newAI.isEmpty {
-          if newAI != self.lastAITranscript {
-            // Finalize user bubble when AI starts responding
-            if let userId = self.activeUserBubbleId {
-              self.updateMessage(id: userId) { msg in
-                msg.status = .complete
-              }
+        if !newAI.isEmpty && newAI != self.lastAITranscript {
+          // Finalize user bubble when AI starts responding
+          if let userId = self.activeUserBubbleId {
+            self.updateMessage(id: userId) { msg in
+              msg.status = .complete
             }
-
-            if self.activeAIBubbleId == nil {
-              // New AI turn: create a bubble
-              let bubble = ChatMessage(role: .assistant, text: newAI, status: .streaming)
-              self.messages.append(bubble)
-              self.activeAIBubbleId = bubble.id
-            } else {
-              // Update existing bubble
-              self.updateMessage(id: self.activeAIBubbleId!) { msg in
-                msg.text = newAI
-              }
-            }
-            self.lastAITranscript = newAI
           }
+
+          if self.activeAIBubbleId == nil {
+            let bubble = ChatMessage(role: .assistant, text: newAI, status: .streaming)
+            self.messages.append(bubble)
+            self.activeAIBubbleId = bubble.id
+          } else {
+            self.updateMessage(id: self.activeAIBubbleId!) { msg in
+              msg.text = newAI
+            }
+          }
+          self.lastAITranscript = newAI
         }
 
         // --- Turn complete: user transcript cleared by VoiceAgent ---
         if newUser.isEmpty && self.activeUserBubbleId != nil {
-          // Finalize both bubbles for this turn
           if let userId = self.activeUserBubbleId {
             self.updateMessage(id: userId) { msg in
               msg.status = .complete
@@ -191,11 +188,13 @@ class ChatViewModel: ObservableObject {
               msg.status = .complete
             }
           }
-          // Reset for next turn
+          // Reset user bubble but KEEP lastAITranscript to prevent
+          // stale aiTranscript (not cleared by VoiceAgent on turnComplete)
+          // from creating a duplicate AI bubble
           self.activeUserBubbleId = nil
           self.activeAIBubbleId = nil
           self.lastUserTranscript = ""
-          self.lastAITranscript = ""
+          // lastAITranscript intentionally NOT reset here
         }
       }
     }

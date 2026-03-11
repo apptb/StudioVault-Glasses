@@ -413,7 +413,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // --- POST /context (inject conversation history from voice mode) ---
+    // --- POST /context (inject voice session context into system prompt) ---
     if (req.url === "/context") {
       const { messages } = parsed;
       if (!Array.isArray(messages)) {
@@ -422,19 +422,25 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      // Convert to Anthropic message format and prepend to conversation
-      for (const msg of messages) {
-        if (msg.role && msg.content) {
-          conversationMessages.push({
-            role: msg.role === "user" ? "user" : "assistant",
-            content: msg.content,
-          });
-        }
+      // Format voice transcripts as system-level context (not fake conversation)
+      const contextLines = messages
+        .filter((m) => m.role && m.content)
+        .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+        .join("\n");
+
+      if (contextLines) {
+        // Rebuild system blocks with voice context appended
+        const basePrompt = systemBlocks?.[0]?.text || getSystemBlocks().text;
+        const updatedPrompt = basePrompt +
+          "\n\n[Voice conversation that just happened -- the user may refer to this. " +
+          "You were the assistant in this conversation and performed any actions mentioned.]\n" +
+          contextLines;
+        systemBlocks = [{ type: "text", text: updatedPrompt, cache_control: { type: "ephemeral" } }];
       }
 
-      console.log(`[Server] Injected ${messages.length} context messages (total: ${conversationMessages.length})`);
+      console.log(`[Server] Injected ${messages.length} voice context messages into system prompt`);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, messageCount: conversationMessages.length }));
+      res.end(JSON.stringify({ ok: true, contextLines: messages.length }));
       return;
     }
 

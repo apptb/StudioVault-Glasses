@@ -32,10 +32,11 @@ export async function POST(request: NextRequest) {
     sessionKey =
       request.headers.get("x-agent-session-key") ||
       `anonymous:${Date.now()}`;
+    const userId = request.headers.get("x-agent-user-id") || "";
 
-    console.log(`[Init] Session: ${sessionKey}`);
+    console.log(`[Init] Session: ${sessionKey}, userId: ${userId.slice(0, 8)}...`);
 
-    const handle = await getOrCreateSandbox(sessionKey);
+    const handle = await getOrCreateSandbox(sessionKey, userId || undefined);
 
     // Build the public sandbox URL that iOS can call directly
     const sandboxHost = handle.sandbox.getHost(3000);

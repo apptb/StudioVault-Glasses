@@ -6,6 +6,7 @@ import {
   getMessages,
   formatMessagesAsContext,
 } from "./session-store";
+import { getMemory } from "./memory-store";
 import crypto from "crypto";
 
 const SANDBOX_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -20,6 +21,7 @@ interface SandboxHandle {
   lastActive: number;
   isNewSandbox: boolean;
   serverUrl: string; // http://localhost:3000 inside sandbox
+  userId: string;
 }
 
 export interface AgentResult {
@@ -37,7 +39,8 @@ const sandboxCache = new Map<string, SandboxHandle>();
  * Tries: in-memory cache -> Redis mapping -> create new.
  */
 export async function getOrCreateSandbox(
-  sessionKey: string
+  sessionKey: string,
+  userId?: string
 ): Promise<SandboxHandle> {
   // 1. Check in-memory cache
   const cached = sandboxCache.get(sessionKey);
@@ -47,6 +50,7 @@ export async function getOrCreateSandbox(
       cached.sandbox = sandbox;
       cached.lastActive = Date.now();
       cached.isNewSandbox = false;
+      if (userId) cached.userId = userId;
       // Verify server is still running
       if (await isServerHealthy(sandbox, cached.authToken)) {
         return cached;
@@ -80,6 +84,7 @@ export async function getOrCreateSandbox(
         lastActive: Date.now(),
         isNewSandbox: false,
         serverUrl: `http://localhost:${SERVER_PORT}`,
+        userId: userId || "",
       };
       sandboxCache.set(sessionKey, handle);
 
@@ -99,7 +104,7 @@ export async function getOrCreateSandbox(
   }
 
   // 3. Create new sandbox
-  return createSandbox(sessionKey);
+  return createSandbox(sessionKey, userId);
 }
 
 /**
@@ -115,6 +120,24 @@ export async function runAgent(
 ): Promise<AgentResult> {
   // Build system prompt, potentially with recovery context
   let finalSystemPrompt = systemPrompt || "";
+
+  // Inject persistent memory into system prompt
+  if (handle.userId) {
+    try {
+      const memoryContent = await getMemory(handle.userId);
+      if (memoryContent) {
+        const memoryPrefix = `[Your persistent memory about this user]\n${memoryContent.slice(0, 2000)}`;
+        finalSystemPrompt = finalSystemPrompt
+          ? `${memoryPrefix}\n\n${finalSystemPrompt}`
+          : memoryPrefix;
+        console.log(
+          `[Agent] Injected persistent memory (${memoryContent.length} chars) for user ${handle.userId.slice(0, 8)}...`
+        );
+      }
+    } catch (err) {
+      console.error("[Agent] Failed to load memory:", err);
+    }
+  }
 
   if (handle.isNewSandbox && sessionKey) {
     const priorMessages = await getMessages(sessionKey);
@@ -194,7 +217,7 @@ export async function updateAgentSession(
 
 // --- Internal helpers ---
 
-async function createSandbox(sessionKey: string): Promise<SandboxHandle> {
+async function createSandbox(sessionKey: string, userId?: string): Promise<SandboxHandle> {
   const templateId = process.env.E2B_TEMPLATE_ID;
   if (!templateId) {
     throw new Error("E2B_TEMPLATE_ID not configured");
@@ -225,6 +248,7 @@ async function createSandbox(sessionKey: string): Promise<SandboxHandle> {
     lastActive: Date.now(),
     isNewSandbox: true,
     serverUrl: `http://localhost:${SERVER_PORT}`,
+    userId: userId || "",
   };
   sandboxCache.set(sessionKey, handle);
 
@@ -253,6 +277,10 @@ async function startServer(sandbox: Sandbox, authToken: string): Promise<void> {
     envs: {
       AUTH_TOKEN: authToken,
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
+      MEMORY_API_URL: process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.MEMORY_API_URL || "",
+      MEMORY_API_TOKEN: process.env.AGENT_TOKEN || "",
     },
   });
 

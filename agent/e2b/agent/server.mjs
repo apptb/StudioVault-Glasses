@@ -11,6 +11,8 @@ const WORKSPACE = "/home/user/workspace";
 const MAX_TOOL_ITERATIONS = 20;
 const MAX_TOKENS = 8192;
 const MODEL = "claude-sonnet-4-6";
+const MEMORY_API_URL = process.env.MEMORY_API_URL || "";
+const MEMORY_API_TOKEN = process.env.MEMORY_API_TOKEN || "";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -349,11 +351,56 @@ const TOOLS = [
       required: ["page_id"],
     },
   },
+  {
+    name: "memory_read",
+    description:
+      "Read your persistent memory. Use file='core' to read your main memory about this user, or file='YYYY-MM-DD' to read a daily conversation log.",
+    input_schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          description: "'core' for main memory, or a date like '2026-03-11' for a daily log",
+        },
+      },
+      required: ["file"],
+    },
+  },
+  {
+    name: "memory_save",
+    description:
+      "Save to your persistent memory. Use file='core' to overwrite your main memory (user preferences, facts, context), or file='log' to append a brief entry to today's daily conversation log.",
+    input_schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          description: "'core' to save main memory, 'log' to append to today's daily log",
+        },
+        content: {
+          type: "string",
+          description: "The content to save",
+        },
+      },
+      required: ["file", "content"],
+    },
+  },
+  {
+    name: "memory_list",
+    description:
+      "List available memory files. Returns 'core' if main memory exists, plus any daily log dates.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
-// --- Per-request OAuth tokens (set before each agent run) ---
+// --- Per-request OAuth tokens and userId (set before each agent run) ---
 let currentGoogleAccessToken = null;
 let currentNotionAccessToken = null;
+let currentUserId = null;
 
 const NOTION_API = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
@@ -925,6 +972,57 @@ async function executeTool(name, input) {
         return `Error: ${err.message}`;
       }
     }
+    case "memory_read": {
+      if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
+      try {
+        const res = await fetch(
+          `${MEMORY_API_URL}/api/memory/read?userId=${encodeURIComponent(currentUserId)}&file=${encodeURIComponent(input.file)}`,
+          { headers: { "x-api-token": MEMORY_API_TOKEN } }
+        );
+        if (!res.ok) return `Memory error: ${res.status}`;
+        const data = await res.json();
+        return data.content || "(empty)";
+      } catch (err) {
+        return `Error reading memory: ${err.message}`;
+      }
+    }
+    case "memory_save": {
+      if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
+      try {
+        const res = await fetch(`${MEMORY_API_URL}/api/memory/write`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-token": MEMORY_API_TOKEN,
+          },
+          body: JSON.stringify({
+            userId: currentUserId,
+            file: input.file,
+            content: input.content,
+          }),
+        });
+        if (!res.ok) return `Memory write error: ${res.status}`;
+        const data = await res.json();
+        return data.ok ? `Saved to ${data.type} memory.` : "Memory write failed.";
+      } catch (err) {
+        return `Error saving memory: ${err.message}`;
+      }
+    }
+    case "memory_list": {
+      if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
+      try {
+        const res = await fetch(
+          `${MEMORY_API_URL}/api/memory/list?userId=${encodeURIComponent(currentUserId)}`,
+          { headers: { "x-api-token": MEMORY_API_TOKEN } }
+        );
+        if (!res.ok) return `Memory list error: ${res.status}`;
+        const data = await res.json();
+        const files = data.files || [];
+        return files.length > 0 ? `Available memory files: ${files.join(", ")}` : "No memory files yet.";
+      } catch (err) {
+        return `Error listing memory: ${err.message}`;
+      }
+    }
     default:
       return `Unknown tool: ${name}`;
   }
@@ -937,7 +1035,7 @@ function sendSSE(res, event, data) {
 }
 
 // --- System prompt setup ---
-function getSystemBlocks(customSystemPrompt, hasGoogleToken, hasNotionToken) {
+function getSystemBlocks(customSystemPrompt, hasGoogleToken, hasNotionToken, hasUserId) {
   let base = customSystemPrompt || "You are a helpful coding assistant. You have access to a workspace at /home/user/workspace. Use the tools available to help the user with their tasks.";
   if (hasGoogleToken) {
     base += "\n\nThe user has connected their Google account. You can use google_calendar_events, google_gmail_search, and google_gmail_read tools to access their calendar and email. You can also use google_drive_search, google_drive_read, google_drive_create, and google_drive_update to search, read, create, and update files in their Google Drive. Use these when the user asks about their schedule, meetings, emails, or files.";
@@ -945,12 +1043,18 @@ function getSystemBlocks(customSystemPrompt, hasGoogleToken, hasNotionToken) {
   if (hasNotionToken) {
     base += "\n\nThe user has connected their Notion workspace. You can use notion_search to find pages and databases, notion_read_page to read page content, notion_create_page to create new pages, and notion_update_page to append content to existing pages. Use these when the user asks about their Notion notes, documents, or databases.";
   }
+  if (hasUserId && MEMORY_API_URL) {
+    base += "\n\nYou have persistent memory (memory_read, memory_save, memory_list). " +
+      "Proactively save important user preferences, facts, and context using memory_save(file='core'). " +
+      "At the end of meaningful conversations, save a brief summary using memory_save(file='log'). " +
+      "Always check memory_read(file='core') at the start of conversations to recall what you know about this user.";
+  }
   // cache_control on system prompt so it's cached across turns
   return [{ type: "text", text: base, cache_control: { type: "ephemeral" } }];
 }
 
 // --- Core agent loop ---
-async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, notionAccessToken) {
+async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, notionAccessToken, userId) {
   const startTime = Date.now();
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
@@ -960,18 +1064,22 @@ async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, n
   // Set per-request tokens for tool execution
   currentGoogleAccessToken = googleAccessToken || null;
   currentNotionAccessToken = notionAccessToken || null;
+  currentUserId = userId || null;
 
   // Initialize system blocks on first call, if custom prompt provided, or if token status changed
   const hasGoogle = !!googleAccessToken;
   const hasNotion = !!notionAccessToken;
+  const hasUser = !!userId;
   const currentText = systemBlocks?.[0]?.text || "";
   const needsRefresh = !systemBlocks || customSystemPrompt ||
     (hasGoogle && !currentText.includes("google_drive_search")) ||
     (!hasGoogle && currentText.includes("google_drive_search")) ||
     (hasNotion && !currentText.includes("notion_search")) ||
-    (!hasNotion && currentText.includes("notion_search"));
+    (!hasNotion && currentText.includes("notion_search")) ||
+    (hasUser && MEMORY_API_URL && !currentText.includes("memory_read")) ||
+    (!hasUser && currentText.includes("memory_read"));
   if (needsRefresh) {
-    systemBlocks = getSystemBlocks(customSystemPrompt, hasGoogle, hasNotion);
+    systemBlocks = getSystemBlocks(customSystemPrompt, hasGoogle, hasNotion, hasUser);
   }
 
   // Add user message
@@ -1179,7 +1287,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    const { prompt, systemPrompt, googleAccessToken, notionAccessToken } = parsed;
+    const { prompt, systemPrompt, googleAccessToken, notionAccessToken, userId } = parsed;
     if (!prompt) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "prompt is required" }));
@@ -1189,7 +1297,7 @@ const server = createServer(async (req, res) => {
     // --- POST /message (non-streaming, backward compatible) ---
     if (req.url === "/message") {
       try {
-        const result = await enqueue(() => runAgent(prompt, systemPrompt, null, googleAccessToken, notionAccessToken));
+        const result = await enqueue(() => runAgent(prompt, systemPrompt, null, googleAccessToken, notionAccessToken, userId));
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (error) {
@@ -1211,7 +1319,7 @@ const server = createServer(async (req, res) => {
       });
 
       try {
-        const result = await enqueue(() => runAgent(prompt, systemPrompt, res, googleAccessToken, notionAccessToken));
+        const result = await enqueue(() => runAgent(prompt, systemPrompt, res, googleAccessToken, notionAccessToken, userId));
         sendSSE(res, "done", {
           result: result.result,
           cost_usd: result.cost_usd,

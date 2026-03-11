@@ -169,6 +169,7 @@ class AgentBridge: ObservableObject {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue(AgentConfig.token, forHTTPHeaderField: "x-api-token")
     request.setValue(sessionKey, forHTTPHeaderField: "x-agent-session-key")
+    request.setValue(SettingsManager.shared.userId, forHTTPHeaderField: "x-agent-user-id")
     request.httpBody = try JSONSerialization.data(withJSONObject: [String: String]())
 
     NSLog("[Agent] Initializing sandbox for session: %@", sessionKey)
@@ -207,6 +208,7 @@ class AgentBridge: ObservableObject {
     request.timeoutInterval = 120
 
     var body: [String: Any] = ["prompt": prompt, "token": authToken]
+    body["userId"] = SettingsManager.shared.userId
     if let googleToken = await GoogleAuthManager.shared.freshAccessToken() {
       body["googleAccessToken"] = googleToken
     }
@@ -490,6 +492,12 @@ class AgentBridge: ObservableObject {
       return "Creating Notion page..."
     case "notion_update_page":
       return "Updating Notion page..."
+    case "memory_read":
+      return "Recalling memories..."
+    case "memory_save":
+      return "Saving to memory..."
+    case "memory_list":
+      return "Checking memory..."
     default:
       return "Running \(tool)..."
     }

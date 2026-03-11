@@ -12,6 +12,7 @@ final class SettingsManager {
     case agentToken
     case webrtcSignalingURL
     case speakerOutputEnabled
+    case userId
     case agentSessionKey
     case agentSessionCreatedAt
   }
@@ -54,6 +55,15 @@ final class SettingsManager {
   var speakerOutputEnabled: Bool {
     get { defaults.bool(forKey: Key.speakerOutputEnabled.rawValue) }
     set { defaults.set(newValue, forKey: Key.speakerOutputEnabled.rawValue) }
+  }
+
+  // MARK: - User Identity (permanent, survives reset)
+
+  var userId: String {
+    if let id = defaults.string(forKey: Key.userId.rawValue) { return id }
+    let id = UUID().uuidString
+    defaults.set(id, forKey: Key.userId.rawValue)
+    return id
   }
 
   // MARK: - Session Persistence

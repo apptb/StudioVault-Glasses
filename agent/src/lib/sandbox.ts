@@ -6,18 +6,23 @@ import {
   getMessages,
   formatMessagesAsContext,
 } from "./session-store";
+import crypto from "crypto";
 
 const SANDBOX_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const AGENT_TIMEOUT_MS = 90_000; // 90 seconds per agent run
+const SERVER_PORT = 3000;
+const SERVER_STARTUP_TIMEOUT_MS = 10_000; // 10s to wait for server to be ready
 
 interface SandboxHandle {
   sandbox: Sandbox;
   agentSessionId: string | null;
+  authToken: string;
   lastActive: number;
-  isNewSandbox: boolean; // true if freshly created (not resumed)
+  isNewSandbox: boolean;
+  serverUrl: string; // http://localhost:3000 inside sandbox
 }
 
-interface AgentResult {
+export interface AgentResult {
   result: string;
   sessionId: string | null;
   costUsd: number | null;
@@ -25,14 +30,11 @@ interface AgentResult {
 }
 
 // In-memory hot cache (avoids Redis round-trip for consecutive requests).
-// Redis is source of truth; this resets on cold start which is fine.
 const sandboxCache = new Map<string, SandboxHandle>();
 
 /**
  * Get or create an E2B sandbox for a given session key.
  * Tries: in-memory cache -> Redis mapping -> create new.
- * Returns isNewSandbox=true when a fresh sandbox was created for a session
- * that had prior messages (i.e. session recovery needed).
  */
 export async function getOrCreateSandbox(
   sessionKey: string
@@ -45,6 +47,13 @@ export async function getOrCreateSandbox(
       cached.sandbox = sandbox;
       cached.lastActive = Date.now();
       cached.isNewSandbox = false;
+      // Verify server is still running
+      if (await isServerHealthy(sandbox, cached.authToken)) {
+        return cached;
+      }
+      // Server died, restart it
+      console.log(`[Sandbox] Server not healthy, restarting`);
+      await startServer(sandbox, cached.authToken);
       return cached;
     } catch {
       sandboxCache.delete(sessionKey);
@@ -59,15 +68,21 @@ export async function getOrCreateSandbox(
         `[Sandbox] Resuming sandbox ${mapping.sandboxId} for session ${sessionKey}`
       );
       const sandbox = await Sandbox.connect(mapping.sandboxId);
+      const authToken = crypto.randomUUID();
+
+      // Start server in resumed sandbox (previous server process is gone after pause/resume)
+      await startServer(sandbox, authToken);
+
       const handle: SandboxHandle = {
         sandbox,
         agentSessionId: mapping.agentSessionId,
+        authToken,
         lastActive: Date.now(),
         isNewSandbox: false,
+        serverUrl: `http://localhost:${SERVER_PORT}`,
       };
       sandboxCache.set(sessionKey, handle);
 
-      // Update last active in Redis
       await saveSandboxMapping(
         sessionKey,
         sandbox.sandboxId,
@@ -88,26 +103,20 @@ export async function getOrCreateSandbox(
 }
 
 /**
- * Run the Claude Agent SDK inside the sandbox.
- * If this is a recovered session (new sandbox for existing conversation),
- * injects prior message history as system context.
+ * Run the agent by POSTing to the persistent server inside the sandbox.
+ * Much faster than spawning a new Node process each time.
  */
 export async function runAgent(
   handle: SandboxHandle,
   prompt: string,
   systemPrompt?: string,
-  agentSessionId?: string | null,
+  _agentSessionId?: string | null,
   sessionKey?: string
 ): Promise<AgentResult> {
-  const envs: Record<string, string> = {
-    AGENT_PROMPT: prompt,
-  };
-
   // Build system prompt, potentially with recovery context
   let finalSystemPrompt = systemPrompt || "";
 
   if (handle.isNewSandbox && sessionKey) {
-    // Session recovery: load prior messages from Redis and inject as context
     const priorMessages = await getMessages(sessionKey);
     if (priorMessages.length > 0) {
       const context = formatMessagesAsContext(priorMessages);
@@ -121,79 +130,50 @@ export async function runAgent(
     }
   }
 
+  console.log(
+    `[Agent] Sending to server in sandbox ${handle.sandbox.sandboxId}, prompt: ${prompt.slice(0, 100)}...`
+  );
+
+  // POST to the persistent server inside the sandbox
+  const payload: Record<string, string> = {
+    prompt,
+    token: handle.authToken,
+  };
   if (finalSystemPrompt) {
-    envs.AGENT_SYSTEM_PROMPT = finalSystemPrompt;
+    payload.systemPrompt = finalSystemPrompt;
   }
-  if (agentSessionId) {
-    envs.AGENT_SESSION_ID = agentSessionId;
+
+  const url = handle.sandbox.getHost(SERVER_PORT);
+  const response = await fetch(`https://${url}/message`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(AGENT_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Agent server error (${response.status}): ${errorText.slice(0, 200)}`
+    );
   }
+
+  const output = (await response.json()) as Record<string, unknown>;
 
   console.log(
-    `[Agent] Running agent in sandbox ${handle.sandbox.sandboxId}, prompt: ${prompt.slice(0, 100)}...`
+    `[Agent] Completed. session=${output.session_id}, cost=$${output.cost_usd}, duration=${output.duration_ms}ms`
   );
 
-  const result = await handle.sandbox.commands.run(
-    "node /home/user/agent/run.mjs",
-    { envs, timeoutMs: AGENT_TIMEOUT_MS }
-  );
-
-  if (result.exitCode !== 0) {
-    const errorOutput = result.stderr || result.stdout;
-    console.error(
-      `[Agent] Script failed (exit ${result.exitCode}): ${errorOutput.slice(0, 500)}`
-    );
-
-    try {
-      const parsed = JSON.parse(
-        errorOutput.trim().split("\n").pop() || "{}"
-      );
-      throw new Error(
-        parsed.error ||
-          `Agent script failed with exit code ${result.exitCode}`
-      );
-    } catch (parseErr) {
-      if (parseErr instanceof SyntaxError) {
-        throw new Error(
-          `Agent script failed (exit ${result.exitCode}): ${errorOutput.slice(0, 200)}`
-        );
-      }
-      throw parseErr;
-    }
-  }
-
-  // Parse the last line of stdout as JSON
-  const lines = result.stdout.trim().split("\n");
-  const lastLine = lines[lines.length - 1];
-
-  try {
-    const output = JSON.parse(lastLine);
-    console.log(
-      `[Agent] Completed. session=${output.session_id}, cost=$${output.cost_usd}, duration=${output.duration_ms}ms`
-    );
-    return {
-      result: output.result || "Agent completed with no response.",
-      sessionId: output.session_id || null,
-      costUsd: output.cost_usd || null,
-      durationMs: output.duration_ms || null,
-    };
-  } catch {
-    console.error(
-      `[Agent] Failed to parse output: ${lastLine.slice(0, 300)}`
-    );
-    return {
-      result:
-        result.stdout.trim() ||
-        "Agent completed but output was not parsable.",
-      sessionId: null,
-      costUsd: null,
-      durationMs: null,
-    };
-  }
+  return {
+    result: (output.result as string) || "Agent completed with no response.",
+    sessionId: (output.session_id as string) || null,
+    costUsd: (output.cost_usd as number) || null,
+    durationMs: (output.duration_ms as number) || null,
+  };
 }
 
 /**
  * Update the agent session ID for multi-turn resume.
- * Persists to both in-memory cache and Redis.
  */
 export async function updateAgentSession(
   sessionKey: string,
@@ -204,7 +184,6 @@ export async function updateAgentSession(
     handle.agentSessionId = agentSessionId;
     handle.lastActive = Date.now();
 
-    // Persist to Redis
     await saveSandboxMapping(
       sessionKey,
       handle.sandbox.sandboxId,
@@ -213,6 +192,8 @@ export async function updateAgentSession(
   }
 }
 
+// --- Internal helpers ---
+
 async function createSandbox(sessionKey: string): Promise<SandboxHandle> {
   const templateId = process.env.E2B_TEMPLATE_ID;
   if (!templateId) {
@@ -220,6 +201,8 @@ async function createSandbox(sessionKey: string): Promise<SandboxHandle> {
   }
 
   console.log(`[Sandbox] Creating sandbox from template: ${templateId}`);
+
+  const authToken = crypto.randomUUID();
 
   const sandbox = await Sandbox.create(templateId, {
     timeoutMs: SANDBOX_TIMEOUT_MS,
@@ -230,16 +213,84 @@ async function createSandbox(sessionKey: string): Promise<SandboxHandle> {
 
   console.log(`[Sandbox] Created: ${sandbox.sandboxId}`);
 
-  // Persist mapping to Redis
+  // Start the persistent agent server
+  await startServer(sandbox, authToken);
+
   await saveSandboxMapping(sessionKey, sandbox.sandboxId, null);
 
   const handle: SandboxHandle = {
     sandbox,
     agentSessionId: null,
+    authToken,
     lastActive: Date.now(),
     isNewSandbox: true,
+    serverUrl: `http://localhost:${SERVER_PORT}`,
   };
   sandboxCache.set(sessionKey, handle);
 
   return handle;
+}
+
+/**
+ * Start the persistent server.mjs inside the sandbox.
+ * Kills any existing server first, then starts a new one in the background.
+ */
+async function startServer(sandbox: Sandbox, authToken: string): Promise<void> {
+  // Kill any existing server
+  try {
+    await sandbox.commands.run(
+      "pkill -f 'node /home/user/agent/server.mjs' 2>/dev/null; sleep 0.2",
+      { timeoutMs: 5000 }
+    );
+  } catch {
+    // Nothing to kill
+  }
+
+  // Start server in background
+  console.log(`[Sandbox] Starting agent server...`);
+  await sandbox.commands.run("node /home/user/agent/server.mjs", {
+    background: true,
+    envs: {
+      AUTH_TOKEN: authToken,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
+    },
+  });
+
+  // Wait for server to be ready
+  const startTime = Date.now();
+  while (Date.now() - startTime < SERVER_STARTUP_TIMEOUT_MS) {
+    try {
+      const url = sandbox.getHost(SERVER_PORT);
+      const healthRes = await fetch(`https://${url}/health`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (healthRes.ok) {
+        console.log(`[Sandbox] Agent server ready`);
+        return;
+      }
+    } catch {
+      // Server not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+
+  throw new Error("Agent server failed to start within timeout");
+}
+
+/**
+ * Check if the server inside the sandbox is still healthy.
+ */
+async function isServerHealthy(
+  sandbox: Sandbox,
+  _authToken: string
+): Promise<boolean> {
+  try {
+    const url = sandbox.getHost(SERVER_PORT);
+    const res = await fetch(`https://${url}/health`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

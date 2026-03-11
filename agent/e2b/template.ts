@@ -10,6 +10,7 @@ const template = Template()
   .copy('e2b/agent/package.json', '/home/user/agent/')
   .runCmd('npm install')
   .copy('e2b/agent/run.mjs', '/home/user/agent/')
+  .copy('e2b/agent/server.mjs', '/home/user/agent/')
   .setUser('user')
 
 async function main() {

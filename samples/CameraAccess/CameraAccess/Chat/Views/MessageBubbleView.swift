@@ -25,9 +25,16 @@ struct MessageBubbleView: View {
 
   private var textBubble: some View {
     HStack(alignment: .bottom, spacing: 4) {
-      Text(message.text.isEmpty && message.status == .streaming ? " " : message.text)
-        .font(.body)
-        .foregroundStyle(message.role == .user ? .white : .primary)
+      if message.text.isEmpty && message.status == .streaming {
+        Text(" ")
+          .font(.body)
+          .foregroundStyle(message.role == .user ? .white : .primary)
+      } else {
+        MarkdownTextView(
+          text: message.text,
+          foregroundColor: message.role == .user ? .white : .primary
+        )
+      }
 
       if message.status == .streaming {
         TypingCursor()

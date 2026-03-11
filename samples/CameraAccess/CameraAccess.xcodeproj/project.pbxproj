@@ -26,8 +26,10 @@
 		8FFD60542E849D0D0035E446 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFD60532E849D0D0035E446 /* RegistrationView.swift */; };
 		8FFD60602E84A2F70035E446 /* MainAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFD605F2E84A2F70035E446 /* MainAppView.swift */; };
 		8FFD60612E84A2F70035E446 /* DebugMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFD605E2E84A2F70035E446 /* DebugMenuView.swift */; };
+		9DA4B8662F60DD53003E0C93 /* RemoteLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA4B8652F60DD53003E0C93 /* RemoteLogger.swift */; };
 		9DBB18A52F5FFE240019775B /* ChatInputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB189C2F5FFE240019775B /* ChatInputBar.swift */; };
 		9DBB18A62F5FFE240019775B /* MessageBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18A02F5FFE240019775B /* MessageBubbleView.swift */; };
+		9DCC22A02F60FE240019775B /* MarkdownTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCC229F2F60FE240019775B /* MarkdownTextView.swift */; };
 		9DBB18A72F5FFE240019775B /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18A32F5FFE240019775B /* ChatViewModel.swift */; };
 		9DBB18A82F5FFE240019775B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB189F2F5FFE240019775B /* ChatView.swift */; };
 		9DBB18A92F5FFE240019775B /* ChatMessageList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB189D2F5FFE240019775B /* ChatMessageList.swift */; };
@@ -116,12 +118,14 @@
 		8FFD60532E849D0D0035E446 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
 		8FFD605E2E84A2F70035E446 /* DebugMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugMenuView.swift; sourceTree = "<group>"; };
 		8FFD605F2E84A2F70035E446 /* MainAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainAppView.swift; sourceTree = "<group>"; };
+		9DA4B8652F60DD53003E0C93 /* RemoteLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLogger.swift; sourceTree = "<group>"; };
 		9DBB189A2F5FFE240019775B /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		9DBB189C2F5FFE240019775B /* ChatInputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputBar.swift; sourceTree = "<group>"; };
 		9DBB189D2F5FFE240019775B /* ChatMessageList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageList.swift; sourceTree = "<group>"; };
 		9DBB189E2F5FFE240019775B /* ChatTopBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTopBar.swift; sourceTree = "<group>"; };
 		9DBB189F2F5FFE240019775B /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		9DBB18A02F5FFE240019775B /* MessageBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleView.swift; sourceTree = "<group>"; };
+		9DCC229F2F60FE240019775B /* MarkdownTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextView.swift; sourceTree = "<group>"; };
 		9DBB18A12F5FFE240019775B /* VoiceModeOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeOverlay.swift; sourceTree = "<group>"; };
 		9DBB18A32F5FFE240019775B /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		9DBB18AD2F5FFE5D0019775B /* GeminiChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiChatService.swift; sourceTree = "<group>"; };
@@ -296,6 +300,7 @@
 				9DBB189D2F5FFE240019775B /* ChatMessageList.swift */,
 				9DBB189E2F5FFE240019775B /* ChatTopBar.swift */,
 				9DBB189F2F5FFE240019775B /* ChatView.swift */,
+				9DCC229F2F60FE240019775B /* MarkdownTextView.swift */,
 				9DBB18A02F5FFE240019775B /* MessageBubbleView.swift */,
 				9DBB18A12F5FFE240019775B /* VoiceModeOverlay.swift */,
 			);
@@ -352,6 +357,7 @@
 		9DBB18D22F60A2100019775B /* Agent */ = {
 			isa = PBXGroup;
 			children = (
+				9DA4B8652F60DD53003E0C93 /* RemoteLogger.swift */,
 				9DBB18CE2F60A2100019775B /* AgentBridge.swift */,
 				9DBB18CF2F60A2100019775B /* AgentConfig.swift */,
 				9DBB18D02F60A2100019775B /* ToolCallModels.swift */,
@@ -527,6 +533,7 @@
 				9DD6CAAF2F3C426600ED7098 /* Secrets.swift in Sources */,
 				9DBB18A52F5FFE240019775B /* ChatInputBar.swift in Sources */,
 				9DBB18A62F5FFE240019775B /* MessageBubbleView.swift in Sources */,
+				9DCC22A02F60FE240019775B /* MarkdownTextView.swift in Sources */,
 				9DBB18A72F5FFE240019775B /* ChatViewModel.swift in Sources */,
 				9DBB18A82F5FFE240019775B /* ChatView.swift in Sources */,
 				9DBB18A92F5FFE240019775B /* ChatMessageList.swift in Sources */,
@@ -568,6 +575,7 @@
 				8FFD5FF62E8422580035E446 /* CustomButton.swift in Sources */,
 				E6FD3BCE2EB4D53A00E7FE5D /* NonStreamView.swift in Sources */,
 				A1B2C3D42F0A000200000001 /* GeminiConfig.swift in Sources */,
+				9DA4B8662F60DD53003E0C93 /* RemoteLogger.swift in Sources */,
 				A1B2C3D42F0A000200000002 /* GeminiLiveService.swift in Sources */,
 				A1B2C3D42F0A000200000003 /* AudioManager.swift in Sources */,
 				A1B2C3D42F0A000200000004 /* GeminiSessionViewModel.swift in Sources */,
@@ -616,7 +624,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.xiaoanliu.VisionClaw;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xiaoanliu.Matcha;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -644,7 +652,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.xiaoanliu.VisionClaw;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xiaoanliu.Matcha;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

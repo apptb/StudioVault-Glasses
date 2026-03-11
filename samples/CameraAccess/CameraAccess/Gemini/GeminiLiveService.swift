@@ -40,7 +40,11 @@ class GeminiLiveService: ObservableObject {
     self.urlSession = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
   }
 
-  func connect() async -> Bool {
+  private var sessionConfig: VoiceSessionConfig?
+
+  func connect(config: VoiceSessionConfig? = nil) async -> Bool {
+    self.sessionConfig = config
+
     guard let url = GeminiConfig.websocketURL() else {
       connectionState = .error("No API key configured")
       return false
@@ -164,23 +168,28 @@ class GeminiLiveService: ObservableObject {
   }
 
   private func sendSetupMessage() {
+    // Use session config if provided, otherwise fall back to defaults
+    let systemInstruction = sessionConfig?.systemInstruction ?? GeminiConfig.systemInstruction
+    let responseModalities = sessionConfig?.responseModalities ?? ["AUDIO"]
+    let toolDeclarations = sessionConfig?.toolDeclarations ?? ToolDeclarations.allDeclarations()
+
     let setup: [String: Any] = [
       "setup": [
         "model": GeminiConfig.model,
         "generationConfig": [
-          "responseModalities": ["AUDIO"],
+          "responseModalities": responseModalities,
           "thinkingConfig": [
             "thinkingBudget": 0
           ]
         ],
         "systemInstruction": [
           "parts": [
-            ["text": GeminiConfig.systemInstruction]
+            ["text": systemInstruction]
           ]
         ],
         "tools": [
           [
-            "functionDeclarations": ToolDeclarations.allDeclarations()
+            "functionDeclarations": toolDeclarations
           ]
         ],
         "realtimeInputConfig": [

@@ -31,7 +31,7 @@ class GeminiLiveProvider: VoiceModelProvider {
 
   func connect(config: VoiceSessionConfig) async -> Bool {
     wireCallbacks()
-    let success = await service.connect()
+    let success = await service.connect(config: config)
     if success {
       continuation.yield(.sessionStarted)
     }

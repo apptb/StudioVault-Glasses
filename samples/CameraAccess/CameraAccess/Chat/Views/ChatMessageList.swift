@@ -4,7 +4,6 @@ struct ChatMessageList: View {
   let messages: [ChatMessage]
 
   @State private var userScrolledUp = false
-  @State private var autoScrollAnchor: String?
 
   var body: some View {
     ScrollViewReader { proxy in
@@ -17,18 +16,18 @@ struct ChatMessageList: View {
               MessageBubbleView(message: message)
                 .id(message.id)
             }
+
+            // Invisible anchor at the bottom to detect scroll position
+            Color.clear
+              .frame(height: 1)
+              .id("bottom")
+              .onAppear { userScrolledUp = false }
+              .onDisappear { userScrolledUp = true }
           }
           .padding(.vertical, 12)
         }
       }
       .scrollDismissesKeyboard(.interactively)
-      .onScrollGeometryChange(for: Bool.self) { geo in
-        // User is "at bottom" if within 60pt of the bottom edge
-        let atBottom = geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 60
-        return atBottom
-      } action: { _, isAtBottom in
-        userScrolledUp = !isAtBottom
-      }
       .onChange(of: messages.count) { _ in
         scrollToBottomIfAllowed(proxy: proxy)
       }

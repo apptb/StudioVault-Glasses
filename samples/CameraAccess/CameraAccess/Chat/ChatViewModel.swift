@@ -22,6 +22,7 @@ class ChatViewModel: ObservableObject {
   let geminiSessionVM = GeminiSessionViewModel()
 
   private var sendTask: Task<Void, Never>?
+  private var streamingObservation: Task<Void, Never>?
   private var voiceObservation: Task<Void, Never>?
   private var voiceTranscripts: [(role: ChatMessageRole, text: String)] = []
   private var lastUserTranscript: String = ""
@@ -45,6 +46,24 @@ class ChatViewModel: ObservableObject {
     messages.append(ChatMessage(role: .assistant, text: "", status: .streaming))
     RemoteLogger.shared.log("chat:user", data: ["text": text])
 
+    // Observe streaming text updates from the agent bridge
+    streamingObservation?.cancel()
+    streamingObservation = Task { [weak self] in
+      var lastText = ""
+      while !Task.isCancelled {
+        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms polling
+        guard let self, !Task.isCancelled else { break }
+        let current = self.agentBridge.streamingText
+        if current != lastText && !current.isEmpty {
+          lastText = current
+          self.updateLastAssistantMessage { msg in
+            msg.text = current
+            msg.status = .streaming
+          }
+        }
+      }
+    }
+
     sendTask = Task {
       // Check agent connectivity first
       if agentBridge.connectionState == .notConfigured {
@@ -53,16 +72,20 @@ class ChatViewModel: ObservableObject {
 
       let result = await agentBridge.delegateTask(task: text)
 
+      // Stop streaming observation
+      self.streamingObservation?.cancel()
+      self.streamingObservation = nil
+
       switch result {
       case .success(let response):
         RemoteLogger.shared.log("chat:agent", data: ["text": String(response.prefix(500))])
-        updateLastAssistantMessage { msg in
+        self.updateLastAssistantMessage { msg in
           msg.text = response
           msg.status = .complete
         }
       case .failure(let error):
         RemoteLogger.shared.log("chat:error", data: ["error": error])
-        updateLastAssistantMessage { msg in
+        self.updateLastAssistantMessage { msg in
           msg.text = "Failed to reach agent: \(error)"
           msg.status = .error(error)
         }

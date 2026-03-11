@@ -11,6 +11,7 @@ enum AgentConnectionState: Equatable {
 class AgentBridge: ObservableObject {
   @Published var lastToolCallStatus: ToolCallStatus = .idle
   @Published var connectionState: AgentConnectionState = .notConfigured
+  @Published var streamingText: String = ""
 
   private let session: URLSession
   private let pingSession: URLSession
@@ -18,6 +19,10 @@ class AgentBridge: ObservableObject {
   private var conversationHistory: [[String: String]] = []
   private let maxHistoryTurns = 3
   private static let sessionMaxAge: TimeInterval = 86400 // 24 hours
+
+  // Direct E2B sandbox connection
+  private var sandboxUrl: String?
+  private var sandboxAuthToken: String?
 
   init() {
     let config = URLSessionConfiguration.default
@@ -74,6 +79,8 @@ class AgentBridge: ObservableObject {
     let newKey = AgentBridge.newSessionKey()
     sessionKey = newKey
     conversationHistory = []
+    sandboxUrl = nil
+    sandboxAuthToken = nil
     let settings = SettingsManager.shared
     settings.agentSessionKey = newKey
     settings.agentSessionCreatedAt = Date().timeIntervalSince1970
@@ -86,7 +93,6 @@ class AgentBridge: ObservableObject {
   }
 
   /// Inject prior conversation context (e.g. voice transcripts) into history
-  /// so subsequent messages have full context from other interaction modes.
   func injectContext(_ messages: [[String: String]]) {
     conversationHistory.insert(contentsOf: messages, at: 0)
     if conversationHistory.count > maxHistoryTurns * 2 {
@@ -95,23 +101,126 @@ class AgentBridge: ObservableObject {
     NSLog("[Agent] Injected %d context messages (total: %d)", messages.count, conversationHistory.count)
   }
 
-  // MARK: - Agent Chat (session continuity via x-agent-session-key header)
+  // MARK: - Sandbox Init
 
-  func delegateTask(
-    task: String,
-    toolName: String = "execute"
-  ) async -> ToolResult {
-    lastToolCallStatus = .executing(toolName)
-
-    guard let url = URL(string: "\(AgentConfig.baseURL)/api/agent/chat") else {
-      lastToolCallStatus = .failed(toolName, "Invalid URL")
-      return .failure("Invalid gateway URL")
+  private func initSandbox() async throws {
+    guard let url = URL(string: "\(AgentConfig.baseURL)/api/agent/init") else {
+      throw AgentError.invalidURL
     }
 
-    // Append the new user message to conversation history
-    conversationHistory.append(["role": "user", "content": task])
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue(AgentConfig.token, forHTTPHeaderField: "x-api-token")
+    request.setValue(sessionKey, forHTTPHeaderField: "x-agent-session-key")
+    request.httpBody = try JSONSerialization.data(withJSONObject: [String: String]())
 
-    // Trim history to keep only the most recent turns (user+assistant pairs)
+    NSLog("[Agent] Initializing sandbox for session: %@", sessionKey)
+
+    let (data, response) = try await session.data(for: request)
+    guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+      throw AgentError.httpError(code)
+    }
+
+    guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let sbUrl = json["sandboxUrl"] as? String,
+          let authToken = json["authToken"] as? String else {
+      throw AgentError.invalidResponse
+    }
+
+    self.sandboxUrl = sbUrl
+    self.sandboxAuthToken = authToken
+    NSLog("[Agent] Sandbox initialized: %@", sbUrl)
+  }
+
+  // MARK: - Direct E2B Streaming
+
+  private func sendToSandboxStreaming(prompt: String) async throws -> String {
+    guard let sandboxUrl = sandboxUrl, let authToken = sandboxAuthToken else {
+      throw AgentError.sandboxNotInitialized
+    }
+
+    guard let url = URL(string: "\(sandboxUrl)/stream") else {
+      throw AgentError.invalidURL
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.timeoutInterval = 120
+
+    let body: [String: String] = ["prompt": prompt, "token": authToken]
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+    streamingText = ""
+
+    let (bytes, response) = try await session.bytes(for: request)
+    guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+      throw AgentError.httpError(code)
+    }
+
+    var finalResult: String?
+    var currentEvent = ""
+
+    for try await line in bytes.lines {
+      if line.hasPrefix("event: ") {
+        currentEvent = String(line.dropFirst(7))
+      } else if line.hasPrefix("data: ") {
+        let dataStr = String(line.dropFirst(6))
+
+        switch currentEvent {
+        case "token":
+          if let data = dataStr.data(using: .utf8),
+             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+             let text = json["text"] as? String {
+            streamingText += text
+          }
+
+        case "tool_start":
+          if let data = dataStr.data(using: .utf8),
+             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+             let tool = json["tool"] as? String {
+            NSLog("[Agent] Tool: %@", tool)
+          }
+
+        case "done":
+          if let data = dataStr.data(using: .utf8),
+             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+             let result = json["result"] as? String {
+            finalResult = result
+            NSLog("[Agent] Done. cost: %@, duration: %@ms",
+                  String(describing: json["cost_usd"]),
+                  String(describing: json["duration_ms"]))
+          }
+
+        case "error":
+          if let data = dataStr.data(using: .utf8),
+             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+             let error = json["error"] as? String {
+            throw AgentError.serverError(error)
+          }
+
+        default:
+          break
+        }
+
+        currentEvent = ""
+      }
+    }
+
+    return finalResult ?? streamingText
+  }
+
+  // MARK: - Vercel Fallback
+
+  private func sendViaVercel(prompt: String) async throws -> String {
+    guard let url = URL(string: "\(AgentConfig.baseURL)/api/agent/chat") else {
+      throw AgentError.invalidURL
+    }
+
+    conversationHistory.append(["role": "user", "content": prompt])
     if conversationHistory.count > maxHistoryTurns * 2 {
       conversationHistory = Array(conversationHistory.suffix(maxHistoryTurns * 2))
     }
@@ -125,45 +234,97 @@ class AgentBridge: ObservableObject {
     let body: [String: Any] = [
       "model": "claude-agent",
       "messages": conversationHistory,
-      "stream": false
+      "stream": false,
     ]
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-    NSLog("[Agent] Sending %d messages in conversation", conversationHistory.count)
+    let (data, response) = try await session.data(for: request)
+    guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+      throw AgentError.httpError(code)
+    }
+
+    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+       let choices = json["choices"] as? [[String: Any]],
+       let first = choices.first,
+       let message = first["message"] as? [String: Any],
+       let content = message["content"] as? String {
+      conversationHistory.append(["role": "assistant", "content": content])
+      return content
+    }
+
+    let raw = String(data: data, encoding: .utf8) ?? "OK"
+    conversationHistory.append(["role": "assistant", "content": raw])
+    return raw
+  }
+
+  // MARK: - Public API
+
+  func delegateTask(
+    task: String,
+    toolName: String = "execute"
+  ) async -> ToolResult {
+    lastToolCallStatus = .executing(toolName)
+    streamingText = ""
 
     do {
-      request.httpBody = try JSONSerialization.data(withJSONObject: body)
-      let (data, response) = try await session.data(for: request)
-      let httpResponse = response as? HTTPURLResponse
-
-      guard let statusCode = httpResponse?.statusCode, (200...299).contains(statusCode) else {
-        let code = httpResponse?.statusCode ?? 0
-        let bodyStr = String(data: data, encoding: .utf8) ?? "no body"
-        NSLog("[Agent] Chat failed: HTTP %d - %@", code, String(bodyStr.prefix(200)))
-        lastToolCallStatus = .failed(toolName, "HTTP \(code)")
-        return .failure("Agent returned HTTP \(code)")
-      }
-
-      if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-         let choices = json["choices"] as? [[String: Any]],
-         let first = choices.first,
-         let message = first["message"] as? [String: Any],
-         let content = message["content"] as? String {
-        // Append assistant response to history for continuity
-        conversationHistory.append(["role": "assistant", "content": content])
-        NSLog("[Agent] Agent result: %@", String(content.prefix(200)))
-        lastToolCallStatus = .completed(toolName)
-        return .success(content)
-      }
-
-      let raw = String(data: data, encoding: .utf8) ?? "OK"
-      conversationHistory.append(["role": "assistant", "content": raw])
-      NSLog("[Agent] Agent raw: %@", String(raw.prefix(200)))
+      let content = try await sendDirectOrFallback(prompt: task)
+      NSLog("[Agent] Result: %@", String(content.prefix(200)))
       lastToolCallStatus = .completed(toolName)
-      return .success(raw)
+      return .success(content)
     } catch {
-      NSLog("[Agent] Agent error: %@", error.localizedDescription)
+      NSLog("[Agent] Error: %@", error.localizedDescription)
       lastToolCallStatus = .failed(toolName, error.localizedDescription)
       return .failure("Agent error: \(error.localizedDescription)")
+    }
+  }
+
+  private func sendDirectOrFallback(prompt: String) async throws -> String {
+    // Initialize sandbox if needed
+    if sandboxUrl == nil {
+      do {
+        try await initSandbox()
+      } catch {
+        NSLog("[Agent] Init failed, falling back to Vercel: %@", error.localizedDescription)
+        return try await sendViaVercel(prompt: prompt)
+      }
+    }
+
+    // Try direct E2B streaming
+    do {
+      return try await sendToSandboxStreaming(prompt: prompt)
+    } catch {
+      NSLog("[Agent] Direct E2B failed: %@, re-initializing...", error.localizedDescription)
+      // Sandbox may have expired -- re-init and retry once
+      do {
+        sandboxUrl = nil
+        sandboxAuthToken = nil
+        try await initSandbox()
+        return try await sendToSandboxStreaming(prompt: prompt)
+      } catch {
+        NSLog("[Agent] Retry failed, falling back to Vercel: %@", error.localizedDescription)
+        return try await sendViaVercel(prompt: prompt)
+      }
+    }
+  }
+}
+
+// MARK: - Errors
+
+private enum AgentError: LocalizedError {
+  case invalidURL
+  case httpError(Int)
+  case invalidResponse
+  case sandboxNotInitialized
+  case serverError(String)
+
+  var errorDescription: String? {
+    switch self {
+    case .invalidURL: return "Invalid URL"
+    case .httpError(let code): return "HTTP error \(code)"
+    case .invalidResponse: return "Invalid response from server"
+    case .sandboxNotInitialized: return "Sandbox not initialized"
+    case .serverError(let msg): return "Server error: \(msg)"
     }
   }
 }

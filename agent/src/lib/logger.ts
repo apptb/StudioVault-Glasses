@@ -5,7 +5,7 @@ const LOG_KEY = "agent:logs";
 
 interface LogEntry {
   ts: string;
-  type: "request" | "response" | "error" | "event";
+  type: "request" | "response" | "error" | "event" | "init";
   session?: string;
   data: Record<string, unknown>;
 }

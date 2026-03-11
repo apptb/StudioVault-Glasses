@@ -34,7 +34,10 @@ struct ChatView: View {
           text: $viewModel.inputText,
           isSending: viewModel.isSending,
           isInputFocused: $isInputFocused,
-          onSend: { viewModel.sendMessage() },
+          onSend: {
+            isInputFocused = false
+            viewModel.sendMessage()
+          },
           onVoiceTapped: {
             isInputFocused = false
             Task { await viewModel.startVoiceMode() }

@@ -27,7 +27,18 @@ final class SettingsManager {
     case fontTheme
   }
 
-  private init() {}
+  private init() {
+    migrateSystemPromptIfNeeded()
+  }
+
+  /// One-time migration: replace the old "you have NO ability" system prompt
+  /// with the new positive-framing default so Gemini uses tools confidently.
+  private func migrateSystemPromptIfNeeded() {
+    guard let stored = defaults.string(forKey: Key.geminiSystemPrompt.rawValue),
+          stored.contains("You have NO memory, NO storage, and NO ability") else { return }
+    defaults.removeObject(forKey: Key.geminiSystemPrompt.rawValue)
+    NSLog("[Settings] Migrated system prompt to new default")
+  }
 
   // MARK: - Gemini
 

@@ -65,7 +65,10 @@ struct MessageBubbleView: View {
       if message.status == .streaming {
         TypingCursor()
       }
+
+      Spacer(minLength: 0)
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   // MARK: - Tool call step indicator (small pill)

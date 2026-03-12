@@ -13,6 +13,7 @@ struct SettingsView: View {
   @State private var agentToken: String = ""
   @State private var openClawHost: String = ""
   @State private var openClawPort: String = ""
+  @State private var openClawHookToken: String = ""
   @State private var openClawGatewayToken: String = ""
   @State private var webrtcSignalingURL: String = ""
   @State private var speakerOutputEnabled: Bool = false
@@ -73,12 +74,12 @@ struct SettingsView: View {
             }
           }
         } else {
-          Section(header: Text("OpenClaw Agent"), footer: Text("Connect to an OpenClaw instance running on your local network.")) {
+          Section(header: Text("OpenClaw"), footer: Text("Connect to an OpenClaw gateway running on your Mac for agentic tool-calling.")) {
             VStack(alignment: .leading, spacing: 4) {
               Text("Host")
                 .font(AppFont.caption)
                 .foregroundStyle(.secondary)
-              TextField("http://192.168.1.100", text: $openClawHost)
+              TextField("http://your-mac.local", text: $openClawHost)
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
                 .keyboardType(.URL)
@@ -93,6 +94,16 @@ struct SettingsView: View {
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
                 .keyboardType(.numberPad)
+                .font(.system(.body, design: .monospaced))
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Hook Token")
+                .font(AppFont.caption)
+                .foregroundStyle(.secondary)
+              TextField("Hook secret token", text: $openClawHookToken)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
                 .font(.system(.body, design: .monospaced))
             }
 
@@ -230,6 +241,7 @@ struct SettingsView: View {
     agentToken = settings.agentToken
     openClawHost = settings.openClawHost
     openClawPort = String(settings.openClawPort)
+    openClawHookToken = settings.openClawHookToken
     openClawGatewayToken = settings.openClawGatewayToken
     webrtcSignalingURL = settings.webrtcSignalingURL
     speakerOutputEnabled = settings.speakerOutputEnabled
@@ -244,6 +256,7 @@ struct SettingsView: View {
     settings.agentToken = agentToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawHost = openClawHost.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawPort = Int(openClawPort) ?? 18789
+    settings.openClawHookToken = openClawHookToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawGatewayToken = openClawGatewayToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.webrtcSignalingURL = webrtcSignalingURL.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.speakerOutputEnabled = speakerOutputEnabled

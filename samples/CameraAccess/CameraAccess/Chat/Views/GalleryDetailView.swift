@@ -67,21 +67,9 @@ struct GalleryDetailView: View {
       }
       .sheet(isPresented: $showShareSheet) {
         if let uiImage = UIImage(contentsOfFile: photo.fileURL.path) {
-          ShareSheet(items: [uiImage])
+          ShareSheet(photo: uiImage)
         }
       }
     }
   }
-}
-
-// MARK: - ShareSheet
-
-private struct ShareSheet: UIViewControllerRepresentable {
-  let items: [Any]
-
-  func makeUIViewController(context: Context) -> UIActivityViewController {
-    UIActivityViewController(activityItems: items, applicationActivities: nil)
-  }
-
-  func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

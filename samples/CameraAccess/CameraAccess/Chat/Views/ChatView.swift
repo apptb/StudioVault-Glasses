@@ -55,9 +55,10 @@ struct ChatView: View {
       // Wire glasses frames to the shared GeminiSessionViewModel
       streamVM.geminiSessionVM = viewModel.geminiSessionVM
     }
-    .onChange(of: viewModel.isVoiceModeActive) { isActive in
-      if isActive && streamVM.hasActiveDevice && !streamVM.isStreaming {
-        // Auto-start glasses streaming when voice mode begins and glasses are connected
+    .onChange(of: viewModel.voiceConnectionState) { state in
+      // Auto-start glasses streaming AFTER voice session is fully connected
+      // (audio setup is done at this point, so it won't disrupt Bluetooth)
+      if state == .ready && streamVM.hasActiveDevice && !streamVM.isStreaming {
         Task { await streamVM.handleStartStreaming() }
       }
     }

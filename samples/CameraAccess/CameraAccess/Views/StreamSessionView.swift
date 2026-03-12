@@ -19,13 +19,14 @@ struct StreamSessionView: View {
   let wearables: WearablesInterface
   @ObservedObject private var wearablesViewModel: WearablesViewModel
   @StateObject private var viewModel: StreamSessionViewModel
-  @StateObject private var geminiVM = GeminiSessionViewModel()
+  @ObservedObject private var geminiVM: GeminiSessionViewModel
   @StateObject private var webrtcVM = WebRTCSessionViewModel()
 
-  init(wearables: WearablesInterface, wearablesVM: WearablesViewModel) {
+  init(wearables: WearablesInterface, wearablesVM: WearablesViewModel, geminiVM: GeminiSessionViewModel) {
     self.wearables = wearables
     self.wearablesViewModel = wearablesVM
     self._viewModel = StateObject(wrappedValue: StreamSessionViewModel(wearables: wearables))
+    self._geminiVM = ObservedObject(wrappedValue: geminiVM)
   }
 
   var body: some View {

@@ -54,7 +54,7 @@ struct ChatView: View {
     }
     .fullScreenCover(isPresented: $showGlassesStream) {
       ZStack(alignment: .topLeading) {
-        StreamSessionView(wearables: wearables, wearablesVM: wearablesVM)
+        StreamSessionView(wearables: wearables, wearablesVM: wearablesVM, geminiVM: viewModel.geminiSessionVM)
 
         Button {
           showGlassesStream = false

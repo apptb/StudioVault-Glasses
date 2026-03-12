@@ -96,9 +96,12 @@ struct LiquidGlassModifier: ViewModifier {
 
 /// Applies native Liquid Glass capsule directly on a view (no custom shadow/stroke)
 struct NativeGlassCapsule: ViewModifier {
+  var interactive: Bool = false
+
   func body(content: Content) -> some View {
     if #available(iOS 26, *) {
-      content.glassEffect(.regular, in: .capsule)
+      let glass: Glass = interactive ? .regular.interactive() : .regular
+      content.glassEffect(glass, in: .capsule)
     } else {
       content
         .background(.ultraThinMaterial, in: Capsule())

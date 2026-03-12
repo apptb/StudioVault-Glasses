@@ -6,7 +6,7 @@ import {
   getMessages,
   formatMessagesAsContext,
 } from "./session-store";
-import { getMemory } from "./memory-store";
+import { getAllMemoryContent } from "./memory-store";
 import crypto from "crypto";
 
 const SANDBOX_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -121,17 +121,27 @@ export async function runAgent(
   // Build system prompt, potentially with recovery context
   let finalSystemPrompt = systemPrompt || "";
 
-  // Inject persistent memory into system prompt
+  // Inject persistent memory into system prompt (all files: core + named + recent logs)
   if (handle.userId) {
     try {
-      const memoryContent = await getMemory(handle.userId);
-      if (memoryContent) {
-        const memoryPrefix = `[Your persistent memory about this user]\n${memoryContent.slice(0, 2000)}`;
+      const allMemory = await getAllMemoryContent(handle.userId);
+      if (allMemory.length > 0) {
+        const MAX_MEMORY_CHARS = 4000;
+        let totalChars = 0;
+        const sections: string[] = [];
+        for (const { file, content } of allMemory) {
+          const label = file === "core" ? "MEMORY.md" : `${file}.md`;
+          const section = `[${label}]\n${content}`;
+          if (totalChars + section.length > MAX_MEMORY_CHARS) break;
+          sections.push(section);
+          totalChars += section.length;
+        }
+        const memoryPrefix = `[Your persistent memory about this user]\n${sections.join("\n\n")}`;
         finalSystemPrompt = finalSystemPrompt
           ? `${memoryPrefix}\n\n${finalSystemPrompt}`
           : memoryPrefix;
         console.log(
-          `[Agent] Injected persistent memory (${memoryContent.length} chars) for user ${handle.userId.slice(0, 8)}...`
+          `[Agent] Injected ${allMemory.length} memory files (${totalChars} chars) for user ${handle.userId.slice(0, 8)}...`
         );
       }
     } catch (err) {

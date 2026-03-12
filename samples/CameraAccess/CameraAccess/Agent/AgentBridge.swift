@@ -496,6 +496,10 @@ class AgentBridge: ObservableObject {
       return "Recalling memories..."
     case "memory_save":
       return "Saving to memory..."
+    case "memory_delete":
+      return "Removing memory..."
+    case "memory_search":
+      return "Searching memories..."
     case "memory_list":
       return "Checking memory..."
     default:

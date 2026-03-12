@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMemory, listLogDates } from "@/lib/memory-store";
+import { getMemory, listLogDates, listNamedMemories } from "@/lib/memory-store";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/memory/list?userId={userId}
  *
- * List available memory files (core + daily log dates).
+ * List available memory files (core + named files + daily log dates).
  */
 export async function GET(request: NextRequest) {
   const apiToken = request.headers.get("x-api-token");
@@ -30,7 +30,11 @@ export async function GET(request: NextRequest) {
     files.push("core");
   }
 
-  // List daily log dates
+  // Named memory files
+  const named = await listNamedMemories(userId);
+  files.push(...named);
+
+  // Daily log dates
   const dates = await listLogDates(userId);
   files.push(...dates);
 

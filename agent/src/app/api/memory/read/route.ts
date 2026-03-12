@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMemory, getDailyLog } from "@/lib/memory-store";
+import { getMemory, getDailyLog, getNamedMemory } from "@/lib/memory-store";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/memory/read?userId={userId}&file={core|YYYY-MM-DD}
+ * GET /api/memory/read?userId={userId}&file={core|YYYY-MM-DD|<name>}
  *
  * Read persistent memory content.
  */
@@ -29,7 +29,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ content: content || "" });
   }
 
-  // Treat as daily log date (YYYY-MM-DD)
-  const entries = await getDailyLog(userId, file);
-  return NextResponse.json({ content: entries.join("\n") });
+  // Check if it's a date (YYYY-MM-DD format)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(file)) {
+    const entries = await getDailyLog(userId, file);
+    return NextResponse.json({ content: entries.join("\n") });
+  }
+
+  // Named memory file
+  const content = await getNamedMemory(userId, file);
+  return NextResponse.json({ content: content || "" });
 }

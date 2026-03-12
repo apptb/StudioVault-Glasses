@@ -354,13 +354,13 @@ const TOOLS = [
   {
     name: "memory_read",
     description:
-      "Read your persistent memory. Use file='core' to read your main memory about this user, or file='YYYY-MM-DD' to read a daily conversation log.",
+      "Read a persistent memory file. Use file='core' for your main memory, file='<name>' for a named topic file (e.g. 'preferences', 'projects'), or file='YYYY-MM-DD' for a daily log.",
     input_schema: {
       type: "object",
       properties: {
         file: {
           type: "string",
-          description: "'core' for main memory, or a date like '2026-03-11' for a daily log",
+          description: "'core' for main memory, a topic name like 'preferences' or 'projects', or a date like '2026-03-11'",
         },
       },
       required: ["file"],
@@ -369,13 +369,13 @@ const TOOLS = [
   {
     name: "memory_save",
     description:
-      "Save to your persistent memory. Use file='core' to overwrite your main memory (user preferences, facts, context), or file='log' to append a brief entry to today's daily conversation log.",
+      "Save to persistent memory. Use file='core' for the main user profile/facts, file='log' to append to today's daily log, or file='<name>' to create/overwrite a named topic file (e.g. 'preferences', 'projects', 'people').",
     input_schema: {
       type: "object",
       properties: {
         file: {
           type: "string",
-          description: "'core' to save main memory, 'log' to append to today's daily log",
+          description: "'core' for main memory, 'log' for daily log, or a topic name like 'preferences'",
         },
         content: {
           type: "string",
@@ -386,9 +386,39 @@ const TOOLS = [
     },
   },
   {
+    name: "memory_delete",
+    description:
+      "Delete a named memory file. Cannot delete 'core' or 'log'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          description: "The name of the memory file to delete",
+        },
+      },
+      required: ["file"],
+    },
+  },
+  {
+    name: "memory_search",
+    description:
+      "Search across all memory files for relevant content. Returns the top matching snippets with file names.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The search query",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
     name: "memory_list",
     description:
-      "List available memory files. Returns 'core' if main memory exists, plus any daily log dates.",
+      "List all available memory files (core, named files, and daily log dates).",
     input_schema: {
       type: "object",
       properties: {},
@@ -1008,6 +1038,45 @@ async function executeTool(name, input) {
         return `Error saving memory: ${err.message}`;
       }
     }
+    case "memory_delete": {
+      if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
+      if (!input.file || input.file === "core" || input.file === "log") return "Cannot delete 'core' or 'log'. Provide a named file to delete.";
+      try {
+        const res = await fetch(`${MEMORY_API_URL}/api/memory/write`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-token": MEMORY_API_TOKEN,
+          },
+          body: JSON.stringify({
+            userId: currentUserId,
+            file: input.file,
+            delete: true,
+          }),
+        });
+        if (!res.ok) return `Memory delete error: ${res.status}`;
+        return `Deleted memory file '${input.file}'.`;
+      } catch (err) {
+        return `Error deleting memory: ${err.message}`;
+      }
+    }
+    case "memory_search": {
+      if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
+      if (!input.query) return "Please provide a search query.";
+      try {
+        const res = await fetch(
+          `${MEMORY_API_URL}/api/memory/search?userId=${encodeURIComponent(currentUserId)}&query=${encodeURIComponent(input.query)}`,
+          { headers: { "x-api-token": MEMORY_API_TOKEN } }
+        );
+        if (!res.ok) return `Memory search error: ${res.status}`;
+        const data = await res.json();
+        const results = data.results || [];
+        if (results.length === 0) return "No matching memories found.";
+        return results.map((r, i) => `[${i + 1}] (${r.file}) ${r.snippet}`).join("\n\n");
+      } catch (err) {
+        return `Error searching memory: ${err.message}`;
+      }
+    }
     case "memory_list": {
       if (!currentUserId || !MEMORY_API_URL) return "Memory not available (no user ID or memory API not configured).";
       try {
@@ -1044,10 +1113,17 @@ function getSystemBlocks(customSystemPrompt, hasGoogleToken, hasNotionToken, has
     base += "\n\nThe user has connected their Notion workspace. You can use notion_search to find pages and databases, notion_read_page to read page content, notion_create_page to create new pages, and notion_update_page to append content to existing pages. Use these when the user asks about their Notion notes, documents, or databases.";
   }
   if (hasUserId && MEMORY_API_URL) {
-    base += "\n\nYou have persistent memory (memory_read, memory_save, memory_list). " +
-      "Proactively save important user preferences, facts, and context using memory_save(file='core'). " +
-      "At the end of meaningful conversations, save a brief summary using memory_save(file='log'). " +
-      "Always check memory_read(file='core') at the start of conversations to recall what you know about this user.";
+    base += "\n\nYou have persistent memory tools: memory_read, memory_save, memory_delete, memory_search, memory_list.\n" +
+      "Memory is organized into files:\n" +
+      "- 'core': Main MEMORY.md -- user profile, preferences, key facts. Always keep this updated.\n" +
+      "- Named files: Topic-specific files like 'preferences', 'projects', 'people'. Create these to organize information by topic.\n" +
+      "- 'log': Daily conversation log. Append brief summaries of meaningful conversations.\n\n" +
+      "Guidelines:\n" +
+      "- Use memory_search(query) to find relevant memories before answering questions about past context.\n" +
+      "- Use memory_read(file='core') at the start of new conversations.\n" +
+      "- Proactively save important user info. When you learn something new about the user, save it immediately.\n" +
+      "- Use named files to keep memory organized (e.g., save project details to 'projects', preferences to 'preferences').\n" +
+      "- When conversations become substantial, save key learnings to memory without being asked.";
   }
   // cache_control on system prompt so it's cached across turns
   return [{ type: "text", text: base, cache_control: { type: "ephemeral" } }];
@@ -1076,8 +1152,8 @@ async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, n
     (!hasGoogle && currentText.includes("google_drive_search")) ||
     (hasNotion && !currentText.includes("notion_search")) ||
     (!hasNotion && currentText.includes("notion_search")) ||
-    (hasUser && MEMORY_API_URL && !currentText.includes("memory_read")) ||
-    (!hasUser && currentText.includes("memory_read"));
+    (hasUser && MEMORY_API_URL && !currentText.includes("memory_search")) ||
+    (!hasUser && currentText.includes("memory_search"));
   if (needsRefresh) {
     systemBlocks = getSystemBlocks(customSystemPrompt, hasGoogle, hasNotion, hasUser);
   }
@@ -1187,6 +1263,69 @@ async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, n
 
     // Append tool results as user message
     conversationMessages.push({ role: "user", content: toolResults });
+  }
+
+  // --- Pre-compaction memory flush ---
+  // After 40+ messages, if the agent hasn't saved memory recently, run a silent flush turn
+  const FLUSH_THRESHOLD = 40;
+  const recentMessages = conversationMessages.slice(-10);
+  const recentlySaved = recentMessages.some(
+    (m) => m.role === "assistant" && JSON.stringify(m.content).includes("memory_save")
+  );
+  const shouldFlush = currentUserId && MEMORY_API_URL &&
+    conversationMessages.length >= FLUSH_THRESHOLD && !recentlySaved;
+
+  if (shouldFlush) {
+    try {
+      console.log(`[Memory] Flush triggered at ${conversationMessages.length} messages`);
+      const flushPrompt = "[System] This conversation is getting long. Before context is lost, " +
+        "save any important information to memory now. Update core memory with new user facts, " +
+        "save topic-specific info to named files, and append a brief conversation summary to the daily log. " +
+        "Reply with just 'Done.' when finished.";
+
+      conversationMessages.push({ role: "user", content: flushPrompt });
+
+      // Run a silent agent turn for flushing (up to 3 tool iterations)
+      for (let fi = 0; fi < 3; fi++) {
+        const flushMsg = await anthropic.messages.create({
+          model: MODEL,
+          max_tokens: 2048,
+          system: systemBlocks,
+          messages: conversationMessages,
+          tools: TOOLS,
+        });
+
+        conversationMessages.push({ role: "assistant", content: flushMsg.content });
+
+        if (flushMsg.stop_reason !== "tool_use") break;
+
+        // Execute flush tools
+        const flushToolBlocks = flushMsg.content.filter((b) => b.type === "tool_use");
+        const flushToolResults = [];
+        for (const block of flushToolBlocks) {
+          try {
+            const result = await executeTool(block.name, block.input);
+            flushToolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: typeof result === "string" ? result : JSON.stringify(result),
+            });
+          } catch (err) {
+            flushToolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: `Error: ${err.message}`,
+              is_error: true,
+            });
+          }
+        }
+        conversationMessages.push({ role: "user", content: flushToolResults });
+      }
+
+      console.log(`[Memory] Flush completed at ${conversationMessages.length} messages`);
+    } catch (err) {
+      console.error("[Memory] Flush error:", err.message || err);
+    }
   }
 
   const durationMs = Date.now() - startTime;

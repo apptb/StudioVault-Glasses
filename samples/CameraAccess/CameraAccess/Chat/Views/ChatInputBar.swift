@@ -19,39 +19,55 @@ struct ChatInputBar: View {
     }
   }
 
+  // MARK: - Text Input (Floating Glass Bubble)
+
   private var textBar: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: 10) {
+      // Voice mode button
       Button(action: onVoiceTapped) {
-        Image(systemName: "waveform.circle.fill")
-          .font(.title)
-          .foregroundStyle(Color("appPrimaryColor"))
+        Image(systemName: "waveform")
+          .font(.system(size: 16, weight: .medium))
+          .foregroundStyle(.secondary)
+          .frame(width: 32, height: 32)
+          .background(.ultraThinMaterial, in: Circle())
       }
       .accessibilityLabel("Start voice mode")
 
+      // Text field
       TextField("Message...", text: $text, axis: .vertical)
         .font(AppFont.body)
         .textFieldStyle(.plain)
         .focused(isInputFocused)
         .lineLimit(1...5)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 20))
 
-      Button(action: onSend) {
-        Image(systemName: "arrow.up.circle.fill")
-          .font(.title)
-          .foregroundStyle(canSend ? Color("appPrimaryColor") : Color(.tertiaryLabel))
+      // Send button (only when there's text)
+      if canSend {
+        Button(action: onSend) {
+          Image(systemName: "arrow.up")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 28, height: 28)
+            .background(Color("appPrimaryColor"), in: Circle())
+        }
+        .accessibilityLabel("Send message")
+        .transition(.scale.combined(with: .opacity))
       }
-      .disabled(!canSend)
-      .accessibilityLabel("Send message")
     }
-    .padding(.horizontal, 16)
+    .padding(.leading, 8)
+    .padding(.trailing, canSend ? 8 : 12)
     .padding(.vertical, 8)
-    .background(.background)
+    .background(.ultraThinMaterial, in: Capsule())
+    .overlay(Capsule().strokeBorder(.quaternary, lineWidth: 0.5))
+    .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+    .padding(.horizontal, 16)
+    .padding(.bottom, 8)
+    .animation(.easeInOut(duration: 0.2), value: canSend)
   }
 
+  // MARK: - Voice Mode (Floating Glass Bubble)
+
   private var voiceBar: some View {
-    HStack(spacing: 16) {
+    HStack(spacing: 12) {
       // Status indicator
       HStack(spacing: 8) {
         Circle()
@@ -74,15 +90,21 @@ struct ChatInputBar: View {
 
       // Stop button
       Button(action: onVoiceStop) {
-        Image(systemName: "stop.circle.fill")
-          .font(.system(size: 36))
-          .foregroundStyle(.red)
+        Image(systemName: "stop.fill")
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(.white)
+          .frame(width: 32, height: 32)
+          .background(.red, in: Circle())
       }
       .accessibilityLabel("End voice mode")
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
-    .background(.background)
+    .background(.ultraThinMaterial, in: Capsule())
+    .overlay(Capsule().strokeBorder(.quaternary, lineWidth: 0.5))
+    .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+    .padding(.horizontal, 16)
+    .padding(.bottom, 8)
   }
 
   private var canSend: Bool {

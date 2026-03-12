@@ -29,29 +29,30 @@ struct ChatView: View {
 
       Divider()
 
-      ChatMessageList(messages: viewModel.messages)
+      ZStack(alignment: .bottom) {
+        ChatMessageList(messages: viewModel.messages)
+          .padding(.bottom, 56)
 
-      Divider()
-
-      ChatInputBar(
-        text: $viewModel.inputText,
-        isSending: viewModel.isSending,
-        isVoiceModeActive: viewModel.isVoiceModeActive,
-        isModelSpeaking: viewModel.isModelSpeaking,
-        voiceConnectionState: viewModel.voiceConnectionState,
-        isInputFocused: $isInputFocused,
-        onSend: {
-          isInputFocused = false
-          viewModel.sendMessage()
-        },
-        onVoiceTapped: {
-          isInputFocused = false
-          Task { await viewModel.startVoiceMode() }
-        },
-        onVoiceStop: {
-          viewModel.stopVoiceMode()
-        }
-      )
+        ChatInputBar(
+          text: $viewModel.inputText,
+          isSending: viewModel.isSending,
+          isVoiceModeActive: viewModel.isVoiceModeActive,
+          isModelSpeaking: viewModel.isModelSpeaking,
+          voiceConnectionState: viewModel.voiceConnectionState,
+          isInputFocused: $isInputFocused,
+          onSend: {
+            isInputFocused = false
+            viewModel.sendMessage()
+          },
+          onVoiceTapped: {
+            isInputFocused = false
+            Task { await viewModel.startVoiceMode() }
+          },
+          onVoiceStop: {
+            viewModel.stopVoiceMode()
+          }
+        )
+      }
     }
     .task {
       // Wire glasses frames to the shared GeminiSessionViewModel

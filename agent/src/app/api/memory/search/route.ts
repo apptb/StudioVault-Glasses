@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllMemoryContent } from "@/lib/memory-store";
+import {
+  isEmbeddingAvailable,
+  embed,
+  cosineSimilarity,
+} from "@/lib/embeddings";
 
 export const dynamic = "force-dynamic";
+
+interface ScoredChunk {
+  file: string;
+  text: string;
+  keywordScore: number;
+  score: number;
+}
 
 /**
  * GET /api/memory/search?userId={userId}&query={query}
  *
- * Keyword search across all memory files.
+ * Hybrid keyword + vector search across all memory files.
+ * Falls back to keyword-only if OPENAI_API_KEY is not set.
  * Returns top-5 matching chunks with file name, snippet, and score.
  */
 export async function GET(request: NextRequest) {
@@ -41,64 +54,89 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  // Split all content into chunks and score them
-  const scored: { file: string; snippet: string; score: number }[] = [];
+  // Build chunk list from all memory content
+  const chunks: ScoredChunk[] = [];
 
   for (const { file, content } of allContent) {
-    // Split on double newlines (paragraphs) or single newlines for short content
-    const chunks =
-      content.includes("\n\n")
-        ? content.split(/\n\n+/)
-        : content.split(/\n/);
+    const parts = content.includes("\n\n")
+      ? content.split(/\n\n+/)
+      : content.split(/\n/);
 
-    for (const chunk of chunks) {
-      const trimmed = chunk.trim();
+    for (const part of parts) {
+      const trimmed = part.trim();
       if (trimmed.length < 5) continue;
 
       const chunkLower = trimmed.toLowerCase();
-      let score = 0;
+      let keywordScore = 0;
 
       // Word match scoring
       for (const word of queryWords) {
         const regex = new RegExp(`\\b${escapeRegex(word)}`, "gi");
         const matches = chunkLower.match(regex);
         if (matches) {
-          score += matches.length / queryWords.length;
+          keywordScore += matches.length / queryWords.length;
         }
       }
 
       // Exact phrase boost
       if (chunkLower.includes(queryLower)) {
-        score += 2;
+        keywordScore += 2;
       }
 
       // Recency boost for dated logs
       if (/^\d{4}-\d{2}-\d{2}$/.test(file)) {
-        const daysSinceEpoch =
+        const daysSince =
           (Date.now() - new Date(file).getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceEpoch < 7) score *= 1.5;
-        else if (daysSinceEpoch < 30) score *= 1.2;
+        if (daysSince < 7) keywordScore *= 1.5;
+        else if (daysSince < 30) keywordScore *= 1.2;
       }
 
-      // Normalize by chunk length (prefer concise, relevant chunks)
-      const words = trimmed.split(/\s+/).length;
-      if (words > 10) {
-        score = score / Math.log2(words);
+      // Normalize by chunk length
+      const wordCount = trimmed.split(/\s+/).length;
+      if (wordCount > 10) {
+        keywordScore = keywordScore / Math.log2(wordCount);
       }
 
-      if (score > 0) {
-        scored.push({
-          file,
-          snippet: trimmed.slice(0, 200),
-          score: Math.round(score * 100) / 100,
-        });
+      chunks.push({
+        file,
+        text: trimmed,
+        keywordScore,
+        score: keywordScore, // will be overwritten if vector search available
+      });
+    }
+  }
+
+  if (chunks.length === 0) {
+    return NextResponse.json({ results: [] });
+  }
+
+  // Hybrid scoring: keyword (0.3) + vector (0.7) if embeddings available
+  if (isEmbeddingAvailable()) {
+    try {
+      // Batch embed: [query, chunk0, chunk1, ...]
+      const textsToEmbed = [query, ...chunks.map((c) => c.text.slice(0, 500))];
+      const embeddings = await embed(textsToEmbed);
+      const queryEmb = embeddings[0];
+
+      for (let i = 0; i < chunks.length; i++) {
+        const vectorScore = cosineSimilarity(queryEmb, embeddings[i + 1]);
+        // Hybrid: 30% keyword + 70% vector
+        chunks[i].score =
+          0.3 * chunks[i].keywordScore + 0.7 * vectorScore;
       }
+    } catch (err) {
+      // Embedding failed, fall back to keyword-only scores
+      console.error("[Search] Embedding failed, using keyword-only:", err);
     }
   }
 
   // Sort by score descending, return top 5
-  scored.sort((a, b) => b.score - a.score);
-  const results = scored.slice(0, 5);
+  chunks.sort((a, b) => b.score - a.score);
+  const results = chunks.slice(0, 5).map((c) => ({
+    file: c.file,
+    snippet: c.text.slice(0, 200),
+    score: Math.round(c.score * 100) / 100,
+  }));
 
   return NextResponse.json({ results });
 }

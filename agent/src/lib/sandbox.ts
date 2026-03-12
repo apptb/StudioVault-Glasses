@@ -6,7 +6,7 @@ import {
   getMessages,
   formatMessagesAsContext,
 } from "./session-store";
-import { getAllMemoryContent } from "./memory-store";
+import { getAllMemoryContent, appendDailyLog } from "./memory-store";
 import crypto from "crypto";
 
 const SANDBOX_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -160,6 +160,26 @@ export async function runAgent(
       console.log(
         `[Agent] Injected ${priorMessages.length} prior messages as recovery context`
       );
+
+      // Auto-save recovery messages to daily log so they persist in memory
+      if (handle.userId) {
+        try {
+          const summary = priorMessages
+            .slice(-10)
+            .map((m) => `${m.role}: ${m.content}`)
+            .join("\n")
+            .slice(0, 2000);
+          await appendDailyLog(
+            handle.userId,
+            `[Session recovered]\n${summary}`
+          );
+          console.log(
+            `[Memory] Auto-saved ${priorMessages.length} recovery messages to daily log`
+          );
+        } catch (err) {
+          console.error("[Memory] Failed to auto-save session:", err);
+        }
+      }
     }
   }
 

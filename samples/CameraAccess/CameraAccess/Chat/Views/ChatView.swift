@@ -8,6 +8,7 @@ struct ChatView: View {
   @StateObject private var streamVM: StreamSessionViewModel
 
   @State private var showSettings = false
+  @State private var showGallery = false
   @State private var showGlassesStream = false
   @FocusState private var isInputFocused: Bool
 
@@ -22,6 +23,7 @@ struct ChatView: View {
       ChatTopBar(
         showGlassesButton: wearablesVM.registrationState == .registered || wearablesVM.hasMockDevice,
         onGlassesTapped: { showGlassesStream = true },
+        onGalleryTapped: { showGallery = true },
         onSettingsTapped: { showSettings = true }
       )
 
@@ -61,6 +63,9 @@ struct ChatView: View {
       if state == .ready && streamVM.hasActiveDevice && !streamVM.isStreaming {
         Task { await streamVM.handleStartStreaming() }
       }
+    }
+    .sheet(isPresented: $showGallery) {
+      GalleryView()
     }
     .sheet(isPresented: $showSettings) {
       SettingsView()

@@ -33,6 +33,8 @@ enum GeminiConfig {
 
     NEVER pretend to do these things yourself.
 
+    You also have a capture_photo tool. When the user asks you to take a photo, capture what you see, save a picture, or snap a photo, call this tool. You can optionally include a brief description of what is in the photo. This tool works instantly -- no need to warn the user about delays.
+
     IMPORTANT: Before calling execute, ALWAYS speak a brief acknowledgment first. For example:
     - "Sure, let me add that to your shopping list." then call execute.
     - "Got it, searching for that now." then call execute.

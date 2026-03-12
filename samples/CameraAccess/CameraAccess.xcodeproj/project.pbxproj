@@ -54,6 +54,10 @@
 		9DBB18BD2F5FFF370019775B /* ActionAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18AF2F5FFF370019775B /* ActionAgent.swift */; };
 		9DBB18BE2F5FFF370019775B /* AgentCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18B02F5FFF370019775B /* AgentCoordinator.swift */; };
 		A1C4114A2F6200000000000A /* CallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C4114B2F6200000000000A /* CallManager.swift */; };
+		A1D5220A2F6300000000000A /* CapturedPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5220B2F6300000000000A /* CapturedPhoto.swift */; };
+		A1D5220C2F6300000000000B /* PhotoCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5220D2F6300000000000B /* PhotoCaptureStore.swift */; };
+		A1D5220E2F6300000000000C /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5220F2F6300000000000C /* GalleryView.swift */; };
+		A1D522102F6300000000000D /* GalleryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D522112F6300000000000D /* GalleryDetailView.swift */; };
 		9DBB18D32F60A2100019775B /* AgentConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18CF2F60A2100019775B /* AgentConfig.swift */; };
 		9DBB18D42F60A2100019775B /* ToolCallModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18D02F60A2100019775B /* ToolCallModels.swift */; };
 		9DBB18D52F60A2100019775B /* ToolCallRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18D12F60A2100019775B /* ToolCallRouter.swift */; };
@@ -153,6 +157,10 @@
 		9DBB18AF2F5FFF370019775B /* ActionAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionAgent.swift; sourceTree = "<group>"; };
 		9DBB18B02F5FFF370019775B /* AgentCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentCoordinator.swift; sourceTree = "<group>"; };
 		A1C4114B2F6200000000000A /* CallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallManager.swift; sourceTree = "<group>"; };
+		A1D5220B2F6300000000000A /* CapturedPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedPhoto.swift; sourceTree = "<group>"; };
+		A1D5220D2F6300000000000B /* PhotoCaptureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCaptureStore.swift; sourceTree = "<group>"; };
+		A1D5220F2F6300000000000C /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
+		A1D522112F6300000000000D /* GalleryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryDetailView.swift; sourceTree = "<group>"; };
 		9DBB18B12F5FFF370019775B /* VoiceAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAgent.swift; sourceTree = "<group>"; };
 		9DBB18B32F5FFF370019775B /* GeminiLiveProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiLiveProvider.swift; sourceTree = "<group>"; };
 		9DBB18B52F5FFF370019775B /* AgentProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProtocol.swift; sourceTree = "<group>"; };
@@ -340,6 +348,8 @@
 				9DBB189D2F5FFE240019775B /* ChatMessageList.swift */,
 				9DBB189E2F5FFE240019775B /* ChatTopBar.swift */,
 				9DBB189F2F5FFE240019775B /* ChatView.swift */,
+				A1D522112F6300000000000D /* GalleryDetailView.swift */,
+				A1D5220F2F6300000000000C /* GalleryView.swift */,
 				9DCC229F2F60FE240019775B /* MarkdownTextView.swift */,
 				9DBB18A02F5FFE240019775B /* MessageBubbleView.swift */,
 				9DBB18A12F5FFE240019775B /* VoiceModeOverlay.swift */,
@@ -370,6 +380,7 @@
 		9DBB18B42F5FFF370019775B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A1D5220B2F6300000000000A /* CapturedPhoto.swift */,
 				9DBB18B32F5FFF370019775B /* GeminiLiveProvider.swift */,
 			);
 			path = Models;
@@ -384,12 +395,21 @@
 			path = Protocols;
 			sourceTree = "<group>";
 		};
+		A1D522202F6300000000000E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A1D5220D2F6300000000000B /* PhotoCaptureStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		9DBB18B82F5FFF370019775B /* Core */ = {
 			isa = PBXGroup;
 			children = (
 				9DBB18B22F5FFF370019775B /* Agents */,
 				9DBB18B42F5FFF370019775B /* Models */,
 				9DBB18B72F5FFF370019775B /* Protocols */,
+				A1D522202F6300000000000E /* Services */,
 				A1C4114B2F6200000000000A /* CallManager.swift */,
 			);
 			path = Core;
@@ -623,6 +643,10 @@
 				9DBB18BD2F5FFF370019775B /* ActionAgent.swift in Sources */,
 				9DBB18BE2F5FFF370019775B /* AgentCoordinator.swift in Sources */,
 				A1C4114A2F6200000000000A /* CallManager.swift in Sources */,
+				A1D5220A2F6300000000000A /* CapturedPhoto.swift in Sources */,
+				A1D5220C2F6300000000000B /* PhotoCaptureStore.swift in Sources */,
+				A1D5220E2F6300000000000C /* GalleryView.swift in Sources */,
+				A1D522102F6300000000000D /* GalleryDetailView.swift in Sources */,
 				9DD895972F405E0E0090B9B9 /* PiPVideoView.swift in Sources */,
 				8F8F00782E8ACB4600A4BDAF /* WearablesViewModel.swift in Sources */,
 				E6A188482EB918740097D0E1 /* StreamView.swift in Sources */,

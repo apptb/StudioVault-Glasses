@@ -17,6 +17,9 @@ class AgentCoordinator: ObservableObject {
   @Published var toolCallStatus: ToolCallStatus = .idle
   @Published var agentConnectionState: AgentConnectionState = .notConfigured
 
+  /// Most recent camera frame, kept for local tool calls like capture_photo
+  var latestFrame: UIImage?
+
   private var stateObservation: Task<Void, Never>?
 
   init(
@@ -51,15 +54,24 @@ class AgentCoordinator: ObservableObject {
   }
 
   func sendVideoFrame(_ image: UIImage) {
+    latestFrame = image
     voiceAgent.sendVideoFrameIfThrottled(image: image)
   }
 
   // MARK: - Private
 
   private func wireAgents() {
-    // Voice Agent -> Action Agent: route tool calls
+    // Voice Agent -> route tool calls (local or remote)
     voiceAgent.onToolCall = { [weak self] id, name, args in
       guard let self else { return }
+
+      // LOCAL tool: capture_photo -- handle immediately, skip ActionAgent
+      if name == "capture_photo" {
+        self.handleCapturePhoto(callId: id, args: args)
+        return
+      }
+
+      // Remote tool: delegate to ActionAgent -> AgentBridge
       let taskDesc = args["task"] as? String ?? String(describing: args)
       RemoteLogger.shared.log("voice:tool_call", data: ["tool": name, "task": taskDesc])
       let task = AgentTask(id: id, name: name, description: taskDesc)
@@ -83,6 +95,26 @@ class AgentCoordinator: ObservableObject {
       RemoteLogger.shared.log("voice:tool_result", data: ["tool": result.toolName, "result": String(resultText.prefix(500))])
       self?.voiceAgent.sendToolResponse(result.responsePayload)
     }
+  }
+
+  private func handleCapturePhoto(callId: String, args: [String: Any]) {
+    let description = args["description"] as? String
+
+    let result: ToolResult
+    if let frame = latestFrame,
+       let photo = PhotoCaptureStore.shared.saveFrame(frame, description: description) {
+      result = .success("Photo captured and saved: \(photo.filename)")
+      NSLog("[Capture] Saved frame: %@", photo.filename)
+    } else {
+      result = .failure("No camera frame available to capture")
+    }
+
+    let payload = AgentResult.from(
+      taskId: callId,
+      toolName: "capture_photo",
+      result: result
+    ).responsePayload
+    voiceAgent.sendToolResponse(payload)
   }
 
   private func startStateObservation() {

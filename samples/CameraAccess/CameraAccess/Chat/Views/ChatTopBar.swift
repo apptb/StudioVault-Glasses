@@ -3,6 +3,7 @@ import SwiftUI
 struct ChatTopBar: View {
   let showGlassesButton: Bool
   let onGlassesTapped: () -> Void
+  let onGalleryTapped: () -> Void
   let onSettingsTapped: () -> Void
 
   var body: some View {
@@ -21,6 +22,14 @@ struct ChatTopBar: View {
         .accessibilityLabel("Open glasses streaming")
         .padding(.trailing, 8)
       }
+
+      Button(action: onGalleryTapped) {
+        Image(systemName: "photo.on.rectangle")
+          .font(.body)
+          .foregroundStyle(.primary)
+      }
+      .accessibilityLabel("Photo gallery")
+      .padding(.trailing, 8)
 
       Button(action: onSettingsTapped) {
         Image(systemName: "gearshape")

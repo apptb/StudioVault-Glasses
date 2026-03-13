@@ -35,12 +35,12 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.665159990369-hs9pga23q9npc4v6kpahh3selu83mksr</string>
+				<string>com.googleusercontent.apps.YOUR_GOOGLE_CLIENT_ID</string>
 			</array>
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>665159990369-hs9pga23q9npc4v6kpahh3selu83mksr.apps.googleusercontent.com</string>
+	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>MWDAT</key>

@@ -6,6 +6,9 @@ agent/.next/
 agent/.env
 agent/.env.local
 
+# iOS
+samples/CameraAccess/CameraAccess/Secrets.swift
+
 # Android
 samples/CameraAccessAndroid/app/src/main/java/**/Secrets.kt
 samples/CameraAccessAndroid/local.properties

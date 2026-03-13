@@ -1,4 +1,4 @@
-# Matcha
+# 🍵 Matcha
 
 An agent-native voice-and-vision framework. Turn any audio/visual device -- earbuds, smart glasses, pendants, phones -- into an always-on AI companion that can perceive, understand, and act on your behalf.
 

@@ -21,6 +21,14 @@ object GeminiConfig {
     val apiKey: String
         get() = SettingsManager.geminiAPIKey
 
+    // E2B settings
+    val agentBaseURL: String
+        get() = SettingsManager.agentBaseURL
+
+    val agentToken: String
+        get() = SettingsManager.agentToken
+
+    // OpenClaw settings
     val openClawHost: String
         get() = SettingsManager.openClawHost
 
@@ -40,6 +48,12 @@ object GeminiConfig {
 
     val isConfigured: Boolean
         get() = apiKey != "YOUR_GEMINI_API_KEY" && apiKey.isNotEmpty()
+
+    val isE2BConfigured: Boolean
+        get() = agentBaseURL.isNotEmpty()
+                && agentBaseURL != "https://YOUR_DEPLOYMENT.vercel.app"
+                && agentToken.isNotEmpty()
+                && agentToken != "YOUR_AGENT_TOKEN"
 
     val isOpenClawConfigured: Boolean
         get() = openClawGatewayToken != "YOUR_OPENCLAW_GATEWAY_TOKEN"

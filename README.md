@@ -56,7 +56,7 @@ Matcha separates real-time voice interaction from asynchronous task execution, a
 
 **Voice Agent** -- maintains real-time bidirectional audio with the user. Sub-second latency. Never blocked by tasks. Powered by Gemini Live API or OpenAI Realtime API.
 
-**Action Agent** -- receives task delegations from Voice Agent. Executes complex, multi-step tasks in the background via [OpenClaw](https://github.com/nichochar/openclaw) (56+ skills: web search, messaging, smart home, notes, reminders, etc.). Reports results back to Voice Agent when ready.
+**Action Agent** -- receives task delegations from Voice Agent. Executes complex, multi-step tasks in the background via either [E2B](https://e2b.dev) cloud sandboxes (Claude Agent SDK) or [OpenClaw](https://github.com/nichochar/openclaw) (56+ skills: web search, messaging, smart home, notes, reminders, etc.). Reports results back to Voice Agent when ready.
 
 **Example flow:**
 1. User: "Find me the best ramen places in SF that are open late"
@@ -112,7 +112,7 @@ open CameraAccess.xcodeproj
 cp CameraAccess/Secrets.swift.example CameraAccess/Secrets.swift
 ```
 
-Edit `Secrets.swift` with your [Gemini API key](https://aistudio.google.com/apikey) (required) and optional OpenClaw/WebRTC config.
+Edit `Secrets.swift` with your [Gemini API key](https://aistudio.google.com/apikey) (required) and optional E2B/OpenClaw/WebRTC config.
 
 ### 3. Build and run
 
@@ -169,7 +169,7 @@ cd samples/CameraAccessAndroid/app/src/main/java/com/meta/wearable/dat/externals
 cp Secrets.kt.example Secrets.kt
 ```
 
-Edit `Secrets.kt` with your [Gemini API key](https://aistudio.google.com/apikey) (required) and optional OpenClaw/WebRTC config.
+Edit `Secrets.kt` with your [Gemini API key](https://aistudio.google.com/apikey) (required) and optional E2B/OpenClaw/WebRTC config.
 
 ### 4. Build and run
 
@@ -192,9 +192,55 @@ Enable Developer Mode in the Meta AI app (same steps as iOS above), then:
 
 ---
 
+## Agent Backends
+
+Matcha supports two agent backends for task execution. You can switch between them at runtime in the in-app **Settings > Agent Backend** picker.
+
+| Backend | Description | Best for |
+|---------|-------------|----------|
+| **E2B** | Cloud-hosted sandbox (E2B + Claude Agent SDK). Deploy the `agent/` directory to Vercel. Supports streaming tool progress. | Production, multi-user |
+| **OpenClaw** | Local Mac gateway with 56+ skills. Runs on your local network. | Development, personal use |
+
+Without either backend configured, the AI is voice + vision only (no task execution).
+
+---
+
+## Setup: E2B Agent (Optional)
+
+The E2B backend runs a Claude Agent SDK sandbox in the cloud. It supports real-time streaming of tool execution progress (which tools are running, their results, etc.).
+
+### 1. Deploy the agent
+
+Deploy the `agent/` directory to Vercel:
+
+```bash
+cd agent
+vercel deploy
+```
+
+### 2. Configure the app
+
+**iOS** -- In `Secrets.swift`:
+```swift
+static let agentBaseURL = "https://your-deployment.vercel.app"
+static let agentToken = "your-shared-secret-token"
+```
+
+**Android** -- In `Secrets.kt`:
+```kotlin
+const val agentBaseURL = "https://your-deployment.vercel.app"
+const val agentToken = "your-shared-secret-token"
+```
+
+### 3. Select the backend
+
+Open **Settings** in the app and set **Agent Backend** to **E2B**.
+
+---
+
 ## Setup: OpenClaw (Optional)
 
-[OpenClaw](https://github.com/nichochar/openclaw) gives Matcha the ability to take real-world actions: send messages, search the web, manage lists, control smart home devices, and more. Without it, the AI is voice + vision only (no task execution).
+[OpenClaw](https://github.com/nichochar/openclaw) gives Matcha the ability to take real-world actions: send messages, search the web, manage lists, control smart home devices, and more.
 
 ### 1. Install and configure OpenClaw
 
@@ -236,9 +282,11 @@ const val openClawPort = 18789
 const val openClawGatewayToken = "your-gateway-token-here"
 ```
 
-Both iOS and Android also have an in-app Settings screen where you can change these values at runtime.
+### 3. Select the backend
 
-### 3. Start the gateway
+Open **Settings** in the app and set **Agent Backend** to **OpenClaw**. You can use the **Test Connection** button to verify connectivity.
+
+### 4. Start the gateway
 
 ```bash
 openclaw gateway restart
@@ -260,8 +308,13 @@ samples/CameraAccess/CameraAccess/
       GeminiLiveProvider.swift         # Gemini Live API adapter
     Agents/
       VoiceAgent.swift                 # Real-time voice session manager
-      ActionAgent.swift                # Async task executor (OpenClaw)
+      ActionAgent.swift                # Async task executor
       AgentCoordinator.swift           # Dual-agent orchestrator
+
+  Agent/                             # Agent backend (E2B + OpenClaw)
+    AgentBridge.swift                  # Dual-backend bridge (E2B sandbox streaming + OpenClaw)
+    AgentConfig.swift                  # E2B configuration
+    ToolCallModels.swift               # Tool declarations (execute, capture_photo), data types
 
   Gemini/                            # Voice model infrastructure
     GeminiLiveService.swift            # WebSocket client for Gemini Live API
@@ -269,10 +322,8 @@ samples/CameraAccess/CameraAccess/
     GeminiSessionViewModel.swift       # Session lifecycle (delegates to AgentCoordinator)
     GeminiConfig.swift                 # API keys, model config, system prompt
 
-  OpenClaw/                          # Task execution
-    OpenClawBridge.swift               # HTTP client for OpenClaw gateway
-    ToolCallRouter.swift               # Tool call routing
-    ToolCallModels.swift               # Tool declarations, data types
+  OpenClaw/                          # Tool call routing
+    ToolCallRouter.swift               # Routes Gemini tool calls to agent backend
 
   iPhone/                            # Phone camera fallback
     IPhoneCameraManager.swift
@@ -282,8 +333,42 @@ samples/CameraAccess/CameraAccess/
     SignalingClient.swift
 
   Settings/
-    SettingsManager.swift
-    SettingsView.swift
+    SettingsManager.swift              # Persisted settings (agent backend, API keys, session)
+    SettingsView.swift                 # Settings UI with backend picker, connection test
+```
+
+### Project Structure (Android)
+
+```
+samples/CameraAccessAndroid/app/src/main/java/.../cameraaccess/
+  gemini/                            # Voice model infrastructure
+    GeminiLiveService.kt              # WebSocket client for Gemini Live API
+    AudioManager.kt                   # Mic capture (PCM 16kHz) + playback (PCM 24kHz)
+    GeminiSessionViewModel.kt         # Session lifecycle, auto-reconnect, capture_photo handler
+    GeminiConfig.kt                   # API keys, model config, system prompt
+
+  openclaw/                          # Agent backend (E2B + OpenClaw)
+    OpenClawBridge.kt                  # Dual-backend bridge (E2B sandbox streaming + OpenClaw)
+    ToolCallRouter.kt                  # Routes Gemini tool calls to agent backend
+    ToolCallModels.kt                  # Tool declarations (execute, capture_photo), data types
+
+  settings/                          # Settings
+    SettingsManager.kt                 # Persisted settings (agent backend, API keys, session)
+
+  ui/                                # Compose UI
+    SettingsScreen.kt                  # Settings UI with backend picker, connection test
+    StreamScreen.kt                    # Main streaming view
+
+  stream/                            # Camera streaming
+    StreamViewModel.kt                 # Camera frame management
+    StreamingMode.kt                   # Glasses vs phone mode
+
+  webrtc/                            # Live streaming (glasses POV to browser)
+    WebRTCClient.kt
+    WebRTCSessionViewModel.kt
+
+  wearables/                         # Meta glasses integration (DAT SDK)
+    WearablesViewModel.kt
 ```
 
 ### Audio Pipeline
@@ -297,12 +382,13 @@ samples/CameraAccess/CameraAccess/
 
 1. User says "Add eggs to my shopping list"
 2. Voice Agent acknowledges: "Sure, adding that now"
-3. Voice Agent delegates `AgentTask` to Action Agent via `AgentCoordinator`
-4. Action Agent sends HTTP POST to OpenClaw gateway
-5. OpenClaw executes the task
-6. Action Agent returns `AgentResult` to coordinator
-7. Coordinator delivers result back to Voice Agent
-8. Voice Agent speaks the confirmation
+3. Voice Agent delegates task to Action Agent
+4. Action Agent routes to the selected backend:
+   - **E2B**: Initializes sandbox, streams execution via SSE (with tool progress updates), falls back to Vercel if sandbox unavailable
+   - **OpenClaw**: Sends HTTP POST to local gateway
+5. Backend executes the task
+6. Action Agent returns result to Voice Agent
+7. Voice Agent speaks the confirmation
 
 The Voice Agent remains responsive throughout -- the user can continue talking while tasks execute.
 
@@ -315,7 +401,11 @@ The Voice Agent remains responsive throughout -- the user can continue talking w
 - [x] VoiceModelProvider protocol (model-agnostic)
 - [x] Gemini Live provider
 - [x] OpenClaw integration for task execution
-- [x] iOS and Android apps
+- [x] E2B cloud sandbox integration with SSE streaming
+- [x] Agent backend switcher (E2B / OpenClaw) on both platforms
+- [x] Auto-reconnect with exponential backoff
+- [x] Camera photo capture via voice command
+- [x] iOS and Android apps (feature parity)
 - [ ] OpenAI Realtime provider
 - [ ] Device provider abstraction
 

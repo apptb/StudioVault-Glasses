@@ -173,6 +173,10 @@ class GeminiSessionViewModel: ObservableObject {
   }
 
   func stopSession() {
+    // Flush memory before tearing down (fire-and-forget)
+    if let bridge = sharedAgentBridge {
+      Task { await bridge.flushMemory() }
+    }
     reconnectTask?.cancel()
     reconnectTask = nil
     reconnectAttempts = 0

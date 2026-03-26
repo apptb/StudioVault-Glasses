@@ -306,6 +306,8 @@ class GeminiSessionViewModel : ViewModel() {
     // -- Public API --
 
     fun stopSession() {
+        // Flush memory before tearing down (fire-and-forget)
+        openClawBridge.flushMemory()
         reconnectJob?.cancel()
         reconnectJob = null
         reconnectAttempts = 0

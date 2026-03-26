@@ -554,6 +554,30 @@ class AgentBridge: ObservableObject {
     }
   }
 
+  /// Ask the E2B sandbox to flush memory before session ends. Fire-and-forget.
+  func flushMemory() async {
+    guard let sandboxUrl = sandboxUrl, let sandboxAuthToken = sandboxAuthToken else { return }
+    guard let url = URL(string: "\(sandboxUrl)/flush") else { return }
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    let body: [String: Any] = [
+      "token": sandboxAuthToken,
+      "userId": SettingsManager.shared.userId,
+    ]
+    request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+    do {
+      let (data, response) = try await session.data(for: request)
+      if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let flushed = json?["flushed"] as? Bool ?? false
+        NSLog("[Agent] Memory flush: flushed=%@", flushed ? "true" : "false")
+      }
+    } catch {
+      NSLog("[Agent] Memory flush failed (non-critical): %@", error.localizedDescription)
+    }
+  }
+
   // MARK: - Friendly Labels
 
   /// Convert tool name + input into a user-friendly status label

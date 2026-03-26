@@ -1129,6 +1129,66 @@ function getSystemBlocks(customSystemPrompt, hasGoogleToken, hasNotionToken, has
   return [{ type: "text", text: base, cache_control: { type: "ephemeral" } }];
 }
 
+// --- Memory flush (reusable) ---
+async function flushMemory() {
+  if (!currentUserId || !MEMORY_API_URL) {
+    console.log("[Memory] Flush skipped: no userId or MEMORY_API_URL");
+    return false;
+  }
+  try {
+    console.log(`[Memory] Flush triggered at ${conversationMessages.length} messages`);
+    const flushPrompt = "[System] This conversation is getting long. Before context is lost, " +
+      "save any important information to memory now. Update core memory with new user facts, " +
+      "save topic-specific info to named files, and append a brief conversation summary to the daily log. " +
+      "Reply with just 'Done.' when finished.";
+
+    conversationMessages.push({ role: "user", content: flushPrompt });
+
+    // Run a silent agent turn for flushing (up to 3 tool iterations)
+    for (let fi = 0; fi < 3; fi++) {
+      const flushMsg = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 2048,
+        system: systemBlocks,
+        messages: conversationMessages,
+        tools: TOOLS,
+      });
+
+      conversationMessages.push({ role: "assistant", content: flushMsg.content });
+
+      if (flushMsg.stop_reason !== "tool_use") break;
+
+      // Execute flush tools
+      const flushToolBlocks = flushMsg.content.filter((b) => b.type === "tool_use");
+      const flushToolResults = [];
+      for (const block of flushToolBlocks) {
+        try {
+          const result = await executeTool(block.name, block.input);
+          flushToolResults.push({
+            type: "tool_result",
+            tool_use_id: block.id,
+            content: typeof result === "string" ? result : JSON.stringify(result),
+          });
+        } catch (err) {
+          flushToolResults.push({
+            type: "tool_result",
+            tool_use_id: block.id,
+            content: `Error: ${err.message}`,
+            is_error: true,
+          });
+        }
+      }
+      conversationMessages.push({ role: "user", content: flushToolResults });
+    }
+
+    console.log(`[Memory] Flush completed at ${conversationMessages.length} messages`);
+    return true;
+  } catch (err) {
+    console.error("[Memory] Flush error:", err.message || err);
+    return false;
+  }
+}
+
 // --- Core agent loop ---
 async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, notionAccessToken, userId) {
   const startTime = Date.now();
@@ -1266,8 +1326,8 @@ async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, n
   }
 
   // --- Pre-compaction memory flush ---
-  // After 40+ messages, if the agent hasn't saved memory recently, run a silent flush turn
-  const FLUSH_THRESHOLD = 40;
+  // After 10+ messages, if the agent hasn't saved memory recently, run a silent flush turn
+  const FLUSH_THRESHOLD = 10;
   const recentMessages = conversationMessages.slice(-10);
   const recentlySaved = recentMessages.some(
     (m) => m.role === "assistant" && JSON.stringify(m.content).includes("memory_save")
@@ -1276,56 +1336,7 @@ async function runAgent(prompt, customSystemPrompt, stream, googleAccessToken, n
     conversationMessages.length >= FLUSH_THRESHOLD && !recentlySaved;
 
   if (shouldFlush) {
-    try {
-      console.log(`[Memory] Flush triggered at ${conversationMessages.length} messages`);
-      const flushPrompt = "[System] This conversation is getting long. Before context is lost, " +
-        "save any important information to memory now. Update core memory with new user facts, " +
-        "save topic-specific info to named files, and append a brief conversation summary to the daily log. " +
-        "Reply with just 'Done.' when finished.";
-
-      conversationMessages.push({ role: "user", content: flushPrompt });
-
-      // Run a silent agent turn for flushing (up to 3 tool iterations)
-      for (let fi = 0; fi < 3; fi++) {
-        const flushMsg = await anthropic.messages.create({
-          model: MODEL,
-          max_tokens: 2048,
-          system: systemBlocks,
-          messages: conversationMessages,
-          tools: TOOLS,
-        });
-
-        conversationMessages.push({ role: "assistant", content: flushMsg.content });
-
-        if (flushMsg.stop_reason !== "tool_use") break;
-
-        // Execute flush tools
-        const flushToolBlocks = flushMsg.content.filter((b) => b.type === "tool_use");
-        const flushToolResults = [];
-        for (const block of flushToolBlocks) {
-          try {
-            const result = await executeTool(block.name, block.input);
-            flushToolResults.push({
-              type: "tool_result",
-              tool_use_id: block.id,
-              content: typeof result === "string" ? result : JSON.stringify(result),
-            });
-          } catch (err) {
-            flushToolResults.push({
-              type: "tool_result",
-              tool_use_id: block.id,
-              content: `Error: ${err.message}`,
-              is_error: true,
-            });
-          }
-        }
-        conversationMessages.push({ role: "user", content: flushToolResults });
-      }
-
-      console.log(`[Memory] Flush completed at ${conversationMessages.length} messages`);
-    } catch (err) {
-      console.error("[Memory] Flush error:", err.message || err);
-    }
+    await flushMemory();
   }
 
   const durationMs = Date.now() - startTime;
@@ -1371,6 +1382,33 @@ const server = createServer(async (req, res) => {
       status: "ok",
       messageCount: conversationMessages.length,
     }));
+    return;
+  }
+
+  // POST /flush -- client calls this when voice session ends to save memory
+  if (req.method === "POST" && req.url === "/flush") {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    let parsed;
+    try { parsed = JSON.parse(body); } catch { parsed = {}; }
+
+    if (AUTH_TOKEN && parsed.token !== AUTH_TOKEN) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Unauthorized" }));
+      return;
+    }
+
+    // Set userId if provided (so flushMemory can access it)
+    if (parsed.userId) currentUserId = parsed.userId;
+
+    try {
+      const flushed = await enqueue(() => flushMemory());
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, flushed }));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: err.message || String(err) }));
+    }
     return;
   }
 

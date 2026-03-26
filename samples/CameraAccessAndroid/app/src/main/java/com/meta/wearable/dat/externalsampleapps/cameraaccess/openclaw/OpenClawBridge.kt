@@ -417,6 +417,39 @@ class OpenClawBridge {
         }
     }
 
+    /** Ask the E2B sandbox to flush memory before session ends. Fire-and-forget. */
+    fun flushMemory() {
+        val sbUrl = sandboxUrl ?: return
+        val authToken = sandboxAuthToken ?: return
+        try {
+            val body = JSONObject().apply {
+                put("token", authToken)
+                put("userId", SettingsManager.userId)
+            }
+            val request = Request.Builder()
+                .url("$sbUrl/flush")
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .addHeader("Content-Type", "application/json")
+                .build()
+            Thread {
+                try {
+                    val response = pingClient.newCall(request).execute()
+                    val responseBody = response.body?.string() ?: ""
+                    response.close()
+                    if (response.code == 200) {
+                        val json = JSONObject(responseBody)
+                        val flushed = json.optBoolean("flushed", false)
+                        Log.d(TAG, "Memory flush: flushed=$flushed")
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Memory flush failed (non-critical): ${e.message}")
+                }
+            }.start()
+        } catch (e: Exception) {
+            Log.d(TAG, "Memory flush setup failed (non-critical): ${e.message}")
+        }
+    }
+
     private fun initSandbox() {
         val baseURL = GeminiConfig.agentBaseURL
         val token = GeminiConfig.agentToken

@@ -358,7 +358,10 @@ class OpenClawBridge {
 
         // Try direct E2B streaming
         try {
-            return sendToSandboxStreaming(prompt)
+            val result = sendToSandboxStreaming(prompt)
+            // Persist to Vercel in background (sandbox path doesn't write to Redis)
+            persistToVercel(prompt, result)
+            return result
         } catch (e: Exception) {
             Log.d(TAG, "Direct E2B failed: ${e.message}, re-initializing...")
             // Sandbox may have expired -- re-init and retry once
@@ -366,11 +369,51 @@ class OpenClawBridge {
                 sandboxUrl = null
                 sandboxAuthToken = null
                 initSandbox()
-                return sendToSandboxStreaming(prompt)
+                val result = sendToSandboxStreaming(prompt)
+                persistToVercel(prompt, result)
+                return result
             } catch (e2: Exception) {
                 Log.d(TAG, "Retry failed, falling back to Vercel: ${e2.message}")
                 return sendViaVercel(prompt)
             }
+        }
+    }
+
+    /** Fire-and-forget: persist sandbox conversation turn to Redis via Vercel */
+    private fun persistToVercel(userMessage: String, assistantMessage: String) {
+        try {
+            val baseURL = GeminiConfig.agentBaseURL
+            val token = GeminiConfig.agentToken
+            val url = "$baseURL/api/agent/persist"
+
+            val body = JSONObject().apply {
+                put("sessionKey", sessionKey)
+                put("userId", SettingsManager.userId)
+                put("userMessage", userMessage)
+                put("assistantMessage", assistantMessage)
+            }
+
+            val request = Request.Builder()
+                .url(url)
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .addHeader("Content-Type", "application/json")
+                .addHeader("x-api-token", token)
+                .build()
+
+            // Fire-and-forget on a background thread
+            Thread {
+                try {
+                    val response = pingClient.newCall(request).execute()
+                    if (response.code == 200) {
+                        Log.d(TAG, "Persisted conversation turn to Redis")
+                    }
+                    response.close()
+                } catch (e: Exception) {
+                    Log.d(TAG, "Persist failed (non-critical): ${e.message}")
+                }
+            }.start()
+        } catch (e: Exception) {
+            Log.d(TAG, "Persist setup failed (non-critical): ${e.message}")
         }
     }
 

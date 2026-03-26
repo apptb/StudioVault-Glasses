@@ -503,7 +503,13 @@ class AgentBridge: ObservableObject {
 
     // Try direct E2B streaming
     do {
-      return try await sendToSandboxStreaming(prompt: prompt)
+      let result = try await sendToSandboxStreaming(prompt: prompt)
+      // Persist to Vercel in background (sandbox path doesn't write to Redis)
+      Task.detached { [sessionKey, weak self] in
+        await self?.persistToVercel(userMessage: prompt, assistantMessage: result)
+        _ = sessionKey
+      }
+      return result
     } catch {
       NSLog("[Agent] Direct E2B failed: %@, re-initializing...", error.localizedDescription)
       // Sandbox may have expired -- re-init and retry once
@@ -511,11 +517,40 @@ class AgentBridge: ObservableObject {
         sandboxUrl = nil
         sandboxAuthToken = nil
         try await initSandbox()
-        return try await sendToSandboxStreaming(prompt: prompt)
+        let result = try await sendToSandboxStreaming(prompt: prompt)
+        Task.detached { [sessionKey, weak self] in
+          await self?.persistToVercel(userMessage: prompt, assistantMessage: result)
+          _ = sessionKey
+        }
+        return result
       } catch {
         NSLog("[Agent] Retry failed, falling back to Vercel: %@", error.localizedDescription)
         return try await sendViaVercel(prompt: prompt)
       }
+    }
+  }
+
+  /// Fire-and-forget: persist sandbox conversation turn to Redis via Vercel
+  private func persistToVercel(userMessage: String, assistantMessage: String) async {
+    guard let url = URL(string: "\(AgentConfig.baseURL)/api/agent/persist") else { return }
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue(AgentConfig.token, forHTTPHeaderField: "x-api-token")
+    let body: [String: Any] = [
+      "sessionKey": sessionKey,
+      "userId": SettingsManager.shared.userId,
+      "userMessage": userMessage,
+      "assistantMessage": assistantMessage,
+    ]
+    request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+    do {
+      let (_, response) = try await session.data(for: request)
+      if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+        NSLog("[Agent] Persisted conversation turn to Redis")
+      }
+    } catch {
+      NSLog("[Agent] Persist failed (non-critical): %@", error.localizedDescription)
     }
   }
 

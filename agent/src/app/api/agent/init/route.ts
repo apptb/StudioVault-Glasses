@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
         sandboxUrl,
         isNew: handle.isNewSandbox,
       },
-      sessionKey
+      sessionKey,
+      userId || undefined
     );
 
     return NextResponse.json({
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[Init] Error:", message);
-    await log("error", { error: message, source: "init" }, sessionKey);
+    await log("error", { error: message, source: "init" }, sessionKey, undefined);
     return NextResponse.json(
       { error: `Init error: ${message}` },
       { status: 502 }

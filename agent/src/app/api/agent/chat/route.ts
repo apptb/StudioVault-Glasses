@@ -56,8 +56,10 @@ export async function POST(request: NextRequest) {
     sessionKey =
       request.headers.get("x-agent-session-key") ||
       `anonymous:${Date.now()}`;
+    const userId =
+      request.headers.get("x-agent-user-id") || "";
 
-    console.log(`[Agent] E2B mode, session: ${sessionKey}`);
+    console.log(`[Agent] E2B mode, session: ${sessionKey}, userId: ${userId.slice(0, 8)}...`);
 
     // Extract the last user message as the prompt
     const lastUserMessage = [...body.messages]
@@ -73,10 +75,10 @@ export async function POST(request: NextRequest) {
 
     const prompt = lastUserMessage.content;
 
-    await log("request", { prompt: prompt.slice(0, 500), messageCount: body.messages.length }, sessionKey);
+    await log("request", { prompt: prompt.slice(0, 500), messageCount: body.messages.length }, sessionKey, userId || undefined);
 
     // Persist user message to Redis
-    await appendMessage(sessionKey, { role: "user", content: prompt });
+    await appendMessage(sessionKey, { role: "user", content: prompt }, userId || undefined);
 
     // Build system prompt from earlier system messages (if any)
     const systemMessages = body.messages
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
       systemMessages.length > 0 ? systemMessages.join("\n\n") : undefined;
 
     // Get or create sandbox, run agent
-    const handle = await getOrCreateSandbox(sessionKey);
+    const handle = await getOrCreateSandbox(sessionKey, userId || undefined);
     const result = await runAgent(
       handle,
       prompt,
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       content: result.result,
       costUsd: result.costUsd ?? undefined,
       durationMs: result.durationMs ?? undefined,
-    });
+    }, userId || undefined);
 
     // Check if compaction is needed
     const msgCount = await getMessageCount(sessionKey);
@@ -120,7 +122,7 @@ export async function POST(request: NextRequest) {
       costUsd: result.costUsd,
       durationMs: result.durationMs,
       sessionId: result.sessionId,
-    }, sessionKey);
+    }, sessionKey, userId || undefined);
 
     // Return OpenAI-compatible response format
     return NextResponse.json({
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[Agent] Error:", message);
-    await log("error", { error: message }, sessionKey);
+    await log("error", { error: message }, sessionKey, undefined);
     return NextResponse.json(
       { error: `Agent error: ${message}` },
       { status: 502 }

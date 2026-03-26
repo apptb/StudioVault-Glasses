@@ -71,7 +71,8 @@ export async function appendMessage(
     content: string;
     costUsd?: number;
     durationMs?: number;
-  }
+  },
+  userId?: string
 ): Promise<void> {
   if (!isRedisAvailable()) return;
   const key = `msgs:${sessionKey}`;
@@ -82,6 +83,41 @@ export async function appendMessage(
   // RPUSH to maintain chronological order (oldest first)
   await redis(["RPUSH", key, JSON.stringify(entry)]);
   await redisExpire(key, SESSION_TTL);
+
+  // Index this session under the user for session listing
+  if (userId) {
+    await indexSession(userId, sessionKey);
+  }
+}
+
+/**
+ * Index a session key under a user ID (sorted set by timestamp).
+ */
+export async function indexSession(
+  userId: string,
+  sessionKey: string
+): Promise<void> {
+  if (!isRedisAvailable()) return;
+  const score = Date.now();
+  await redis(["ZADD", `sessions:${userId}`, String(score), sessionKey]);
+  await redisExpire(`sessions:${userId}`, SESSION_TTL);
+}
+
+/**
+ * List recent session keys for a user (newest first).
+ */
+export async function getUserSessions(
+  userId: string,
+  limit = 20
+): Promise<string[]> {
+  if (!isRedisAvailable()) return [];
+  const result = await redis([
+    "ZREVRANGE",
+    `sessions:${userId}`,
+    "0",
+    String(limit - 1),
+  ]);
+  return Array.isArray(result) ? (result as string[]) : [];
 }
 
 export async function getMessages(

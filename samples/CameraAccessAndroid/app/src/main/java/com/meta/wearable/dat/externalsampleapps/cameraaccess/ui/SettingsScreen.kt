@@ -64,6 +64,7 @@ private enum class ConnectionTestStatus {
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onRecentTasks: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var geminiAPIKey by remember { mutableStateOf(SettingsManager.geminiAPIKey) }
@@ -343,6 +344,14 @@ fun SettingsScreen(
                 placeholder = "wss://your-server.example.com",
                 keyboardType = KeyboardType.Uri,
             )
+
+            // History
+            if (onRecentTasks != null) {
+                SectionHeader("History")
+                TextButton(onClick = onRecentTasks) {
+                    Text("Recent Tasks")
+                }
+            }
 
             // Reset
             TextButton(onClick = { showResetDialog = true }) {

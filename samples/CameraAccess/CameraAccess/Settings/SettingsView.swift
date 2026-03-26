@@ -242,6 +242,12 @@ struct SettingsView: View {
           .pickerStyle(.segmented)
         }
 
+        Section(header: Text("History")) {
+          NavigationLink("Recent Tasks") {
+            RecentTasksView()
+          }
+        }
+
         Section {
           Button("Reset to Defaults") {
             showResetConfirmation = true

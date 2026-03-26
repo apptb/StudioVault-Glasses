@@ -53,6 +53,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
@@ -69,6 +72,7 @@ fun CameraAccessScaffold(
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   val snackbarHostState = remember { SnackbarHostState() }
   val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  var showRecentTasks by remember { mutableStateOf(false) }
 
   // Observe camera permission errors and show snackbar
   LaunchedEffect(uiState.recentError) {
@@ -81,9 +85,14 @@ fun CameraAccessScaffold(
   Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
     Box(modifier = Modifier.fillMaxSize()) {
       when {
+        showRecentTasks ->
+            RecentTasksScreen(
+                onBack = { showRecentTasks = false },
+            )
         uiState.isSettingsVisible ->
             SettingsScreen(
                 onBack = { viewModel.hideSettings() },
+                onRecentTasks = { showRecentTasks = true },
             )
         uiState.isStreaming ->
             StreamScreen(

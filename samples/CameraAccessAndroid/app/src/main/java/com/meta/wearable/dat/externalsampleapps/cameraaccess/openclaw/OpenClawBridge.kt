@@ -666,7 +666,7 @@ class OpenClawBridge {
         })
         trimHistory()
 
-        Log.d(TAG, "[OpenClaw] Sending ${conversationHistory.size} messages in conversation")
+        Log.d(TAG, "[OpenClaw] Sending ${conversationHistory.size} messages (streaming)")
 
         val messagesArray = JSONArray()
         for (msg in conversationHistory) {
@@ -676,7 +676,7 @@ class OpenClawBridge {
         val body = JSONObject().apply {
             put("model", "openclaw")
             put("messages", messagesArray)
-            put("stream", false)
+            put("stream", true)
         }
 
         val request = Request.Builder()
@@ -687,23 +687,53 @@ class OpenClawBridge {
             .addHeader("x-openclaw-session-key", sessionKey)
             .build()
 
-        val response = client.newCall(request).execute()
-        val responseBody = response.body?.string() ?: ""
-        val statusCode = response.code
-        response.close()
+        _streamingText.value = ""
 
-        if (statusCode !in 200..299) {
-            Log.d(TAG, "[OpenClaw] Chat failed: HTTP $statusCode - ${responseBody.take(200)}")
-            throw RuntimeException("HTTP $statusCode")
+        val response = client.newCall(request).execute()
+        if (response.code !in 200..299) {
+            val code = response.code
+            val errorBody = response.body?.string() ?: ""
+            response.close()
+            Log.d(TAG, "[OpenClaw] Chat failed: HTTP $code - ${errorBody.take(200)}")
+            throw RuntimeException("HTTP $code")
         }
 
-        val json = JSONObject(responseBody)
-        val choices = json.optJSONArray("choices")
-        val content = choices?.optJSONObject(0)
-            ?.optJSONObject("message")
-            ?.optString("content", "")
+        val source = response.body?.source() ?: throw RuntimeException("Empty response body")
+        var accumulated = ""
 
-        val result = if (!content.isNullOrEmpty()) content else responseBody
+        try {
+            while (!source.exhausted()) {
+                val line = source.readUtf8Line() ?: break
+
+                // OpenAI SSE format: "data: {...}" or "data: [DONE]"
+                if (!line.startsWith("data: ")) continue
+                val dataStr = line.removePrefix("data: ")
+
+                if (dataStr == "[DONE]") break
+
+                try {
+                    val json = JSONObject(dataStr)
+                    val choices = json.optJSONArray("choices") ?: continue
+                    val delta = choices.optJSONObject(0)?.optJSONObject("delta") ?: continue
+                    val content = delta.optString("content", "")
+
+                    if (content.isNotEmpty()) {
+                        // Mark thinking as done on first token
+                        if (accumulated.isEmpty()) {
+                            markThinkingDone()
+                        }
+                        accumulated += content
+                        _streamingText.value = accumulated
+                    }
+                } catch (_: Exception) {
+                    // Skip malformed JSON chunks
+                }
+            }
+        } finally {
+            response.close()
+        }
+
+        val result = accumulated.ifEmpty { "OK" }
         conversationHistory.add(JSONObject().apply {
             put("role", "assistant")
             put("content", result)

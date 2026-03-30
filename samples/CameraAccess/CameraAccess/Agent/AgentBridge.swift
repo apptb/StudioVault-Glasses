@@ -426,37 +426,54 @@ class AgentBridge: ObservableObject {
     let body: [String: Any] = [
       "model": "openclaw",
       "messages": conversationHistory,
-      "stream": false,
+      "stream": true,
     ]
     request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-    NSLog("[Agent:OpenClaw] Sending %d messages in conversation", conversationHistory.count)
+    NSLog("[Agent:OpenClaw] Sending %d messages (streaming)", conversationHistory.count)
 
-    let (data, response) = try await session.data(for: request)
+    streamingText = ""
+
+    let (bytes, response) = try await session.bytes(for: request)
     guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
       let code = (response as? HTTPURLResponse)?.statusCode ?? 0
       throw AgentError.httpError(code)
     }
 
-    // Mark thinking as done
-    if let idx = agentSteps.firstIndex(where: { $0.type == .thinking && !$0.isDone }) {
-      agentSteps[idx].isDone = true
+    var accumulated = ""
+
+    for try await line in bytes.lines {
+      // OpenAI SSE format: "data: {...}" or "data: [DONE]"
+      guard line.hasPrefix("data: ") else { continue }
+      let dataStr = String(line.dropFirst(6))
+
+      if dataStr == "[DONE]" {
+        break
+      }
+
+      guard let data = dataStr.data(using: .utf8),
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let first = choices.first,
+            let delta = first["delta"] as? [String: Any] else {
+        continue
+      }
+
+      if let content = delta["content"] as? String {
+        // Mark thinking as done on first token
+        if accumulated.isEmpty {
+          if let idx = agentSteps.firstIndex(where: { $0.type == .thinking && !$0.isDone }) {
+            agentSteps[idx].isDone = true
+          }
+        }
+        accumulated += content
+        streamingText = accumulated
+      }
     }
 
-    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-       let choices = json["choices"] as? [[String: Any]],
-       let first = choices.first,
-       let message = first["message"] as? [String: Any],
-       let content = message["content"] as? String {
-      conversationHistory.append(["role": "assistant", "content": content])
-      streamingText = content
-      return content
-    }
-
-    let raw = String(data: data, encoding: .utf8) ?? "OK"
-    conversationHistory.append(["role": "assistant", "content": raw])
-    streamingText = raw
-    return raw
+    let result = accumulated.isEmpty ? "OK" : accumulated
+    conversationHistory.append(["role": "assistant", "content": result])
+    return result
   }
 
   // MARK: - Public API

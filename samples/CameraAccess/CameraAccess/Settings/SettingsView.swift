@@ -9,6 +9,11 @@ struct SettingsView: View {
   @State private var geminiAPIKey: String = ""
   @State private var geminiSystemPrompt: String = ""
   @State private var selectedBackend: AgentBackend = .e2b
+  // Azure Realtime voice provider (StudioVault-Glasses fork)
+  @State private var selectedVoiceProvider: VoiceProvider = .geminiLive
+  @State private var azureOpenAIAPIKey: String = ""
+  @State private var azureRealtimeBase: String = ""
+  @State private var azureRealtimeDeployment: String = ""
   @State private var agentBaseURL: String = ""
   @State private var agentToken: String = ""
   @State private var openClawHost: String = ""
@@ -49,6 +54,47 @@ struct SettingsView: View {
           TextEditor(text: $geminiSystemPrompt)
             .font(.system(.body, design: .monospaced))
             .frame(minHeight: 200)
+        }
+
+        Section(header: Text("Voice Provider"), footer: Text("Gemini Live is Google's multimodal voice API. Azure Realtime is the deployed gpt-realtime-1-5 on dev-vault (StudioVault fork).")) {
+          Picker("Provider", selection: $selectedVoiceProvider) {
+            ForEach(VoiceProvider.allCases, id: \.self) { provider in
+              Text(provider.rawValue).tag(provider)
+            }
+          }
+          .pickerStyle(.segmented)
+        }
+
+        if selectedVoiceProvider == .azureRealtime {
+          Section(header: Text("Azure Realtime"), footer: Text("Populated from Secrets.swift. Override here only if testing a different deployment.")) {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("API Key")
+                .font(AppFont.caption)
+                .foregroundColor(.secondary)
+              TextField("Azure OpenAI key", text: $azureOpenAIAPIKey)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .font(.system(.body, design: .monospaced))
+            }
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Resource host")
+                .font(AppFont.caption)
+                .foregroundColor(.secondary)
+              TextField("dev-vault.openai.azure.com", text: $azureRealtimeBase)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .font(.system(.body, design: .monospaced))
+            }
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Deployment name")
+                .font(AppFont.caption)
+                .foregroundColor(.secondary)
+              TextField("gpt-realtime-1-5", text: $azureRealtimeDeployment)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .font(.system(.body, design: .monospaced))
+            }
+          }
         }
 
         Section(header: Text("Agent Backend")) {
@@ -300,6 +346,10 @@ struct SettingsView: View {
     geminiAPIKey = settings.geminiAPIKey
     geminiSystemPrompt = settings.geminiSystemPrompt
     selectedBackend = settings.agentBackend
+    selectedVoiceProvider = settings.voiceProvider
+    azureOpenAIAPIKey = settings.azureOpenAIAPIKey
+    azureRealtimeBase = settings.azureRealtimeBase
+    azureRealtimeDeployment = settings.azureRealtimeDeployment
     agentBaseURL = settings.agentBaseURL
     agentToken = settings.agentToken
     openClawHost = settings.openClawHost
@@ -354,6 +404,10 @@ struct SettingsView: View {
     settings.geminiAPIKey = geminiAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.geminiSystemPrompt = geminiSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.agentBackend = selectedBackend
+    settings.voiceProvider = selectedVoiceProvider
+    settings.azureOpenAIAPIKey = azureOpenAIAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.azureRealtimeBase = azureRealtimeBase.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.azureRealtimeDeployment = azureRealtimeDeployment.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.agentBaseURL = agentBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.agentToken = agentToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawHost = openClawHost.trimmingCharacters(in: .whitespacesAndNewlines)

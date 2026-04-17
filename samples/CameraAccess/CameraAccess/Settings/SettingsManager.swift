@@ -3,6 +3,14 @@ import Foundation
 enum AgentBackend: String, CaseIterable {
   case e2b = "E2B"
   case openClaw = "OpenClaw"
+  case studioVaultMCP = "StudioVaultMCP"   // Phase 2 (StudioVault-Glasses fork): HostBroker-routed vault ops
+}
+
+/// Voice provider selector for the StudioVault-Glasses fork.
+/// Added to support Azure Realtime alongside the original Gemini Live provider.
+enum VoiceProvider: String, CaseIterable {
+  case geminiLive = "Gemini Live"
+  case azureRealtime = "Azure Realtime"
 }
 
 final class SettingsManager {
@@ -13,6 +21,13 @@ final class SettingsManager {
   private enum Key: String {
     case geminiAPIKey
     case geminiSystemPrompt
+    case azureOpenAIAPIKey
+    case azureRealtimeBase
+    case azureRealtimeDeployment
+    case azureRealtimeSystemPrompt
+    case hostBrokerURL
+    case hostBrokerToken
+    case voiceProvider
     case agentBackend
     case agentBaseURL
     case agentToken
@@ -53,6 +68,51 @@ final class SettingsManager {
   var geminiSystemPrompt: String {
     get { defaults.string(forKey: Key.geminiSystemPrompt.rawValue) ?? GeminiConfig.defaultSystemInstruction }
     set { defaults.set(newValue, forKey: Key.geminiSystemPrompt.rawValue) }
+  }
+
+  // MARK: - Azure OpenAI Realtime (StudioVault-Glasses fork)
+
+  var azureOpenAIAPIKey: String {
+    get { defaults.string(forKey: Key.azureOpenAIAPIKey.rawValue) ?? Secrets.azureOpenAIAPIKey }
+    set { defaults.set(newValue, forKey: Key.azureOpenAIAPIKey.rawValue) }
+  }
+
+  var azureRealtimeBase: String {
+    get { defaults.string(forKey: Key.azureRealtimeBase.rawValue) ?? Secrets.azureRealtimeBase }
+    set { defaults.set(newValue, forKey: Key.azureRealtimeBase.rawValue) }
+  }
+
+  var azureRealtimeDeployment: String {
+    get { defaults.string(forKey: Key.azureRealtimeDeployment.rawValue) ?? Secrets.azureRealtimeDeployment }
+    set { defaults.set(newValue, forKey: Key.azureRealtimeDeployment.rawValue) }
+  }
+
+  var azureRealtimeSystemPrompt: String {
+    get { defaults.string(forKey: Key.azureRealtimeSystemPrompt.rawValue) ?? AzureRealtimeConfig.defaultSystemInstruction }
+    set { defaults.set(newValue, forKey: Key.azureRealtimeSystemPrompt.rawValue) }
+  }
+
+  // MARK: - Voice provider selector (StudioVault-Glasses fork)
+
+  var voiceProvider: VoiceProvider {
+    get {
+      guard let raw = defaults.string(forKey: Key.voiceProvider.rawValue),
+            let provider = VoiceProvider(rawValue: raw) else { return .geminiLive }
+      return provider
+    }
+    set { defaults.set(newValue.rawValue, forKey: Key.voiceProvider.rawValue) }
+  }
+
+  // MARK: - HostBroker (StudioVault-Glasses fork, Phase 2)
+
+  var hostBrokerURL: String {
+    get { defaults.string(forKey: Key.hostBrokerURL.rawValue) ?? Secrets.hostBrokerURL }
+    set { defaults.set(newValue, forKey: Key.hostBrokerURL.rawValue) }
+  }
+
+  var hostBrokerToken: String {
+    get { defaults.string(forKey: Key.hostBrokerToken.rawValue) ?? Secrets.hostBrokerToken }
+    set { defaults.set(newValue, forKey: Key.hostBrokerToken.rawValue) }
   }
 
   // MARK: - Agent

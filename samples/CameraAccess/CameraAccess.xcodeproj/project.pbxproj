@@ -78,6 +78,9 @@
 		A1B2C3D42F0A000200000003 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000003 /* AudioManager.swift */; };
 		A1B2C3D42F0A000200000004 /* GeminiSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000004 /* GeminiSessionViewModel.swift */; };
 		A1B2C3D42F0A000200000005 /* GeminiOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000005 /* GeminiOverlayView.swift */; };
+		A1B2C3D42F0A000200000010 /* AzureRealtimeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000010 /* AzureRealtimeConfig.swift */; };
+		A1B2C3D42F0A000200000011 /* AzureRealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000011 /* AzureRealtimeService.swift */; };
+		A1B2C3D42F0A000200000012 /* AzureRealtimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F0A000100000012 /* AzureRealtimeProvider.swift */; };
 		A1C4114A2F6200000000000A /* CallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C4114B2F6200000000000A /* CallManager.swift */; };
 		A1D5220A2F6300000000000A /* CapturedPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5220B2F6300000000000A /* CapturedPhoto.swift */; };
 		A1D5220C2F6300000000000B /* PhotoCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D5220D2F6300000000000B /* PhotoCaptureStore.swift */; };
@@ -185,6 +188,9 @@
 		A1B2C3D42F0A000100000003 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		A1B2C3D42F0A000100000004 /* GeminiSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiSessionViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D42F0A000100000005 /* GeminiOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiOverlayView.swift; sourceTree = "<group>"; };
+		A1B2C3D42F0A000100000010 /* AzureRealtimeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureRealtimeConfig.swift; sourceTree = "<group>"; };
+		A1B2C3D42F0A000100000011 /* AzureRealtimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureRealtimeService.swift; sourceTree = "<group>"; };
+		A1B2C3D42F0A000100000012 /* AzureRealtimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureRealtimeProvider.swift; sourceTree = "<group>"; };
 		A1C4114B2F6200000000000A /* CallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallManager.swift; sourceTree = "<group>"; };
 		A1D5220B2F6300000000000A /* CapturedPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedPhoto.swift; sourceTree = "<group>"; };
 		A1D5220D2F6300000000000B /* PhotoCaptureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCaptureStore.swift; sourceTree = "<group>"; };
@@ -289,6 +295,7 @@
 				9DD6CAAE2F3C426600ED7098 /* Secrets.swift.example */,
 				9D3C69602F367CF700E641A5 /* iPhone */,
 				A1B2C3D42F0A000300000001 /* Gemini */,
+				A1B2C3D42F0A000300000010 /* Azure */,
 				8FD96B702E6F0A9800F56AB1 /* ViewModels */,
 				8FD96B762E6F0A9800F56AB1 /* Views */,
 				8FD96B772E6F0A9800F56AB1 /* Assets.xcassets */,
@@ -384,6 +391,7 @@
 			children = (
 				A1D5220B2F6300000000000A /* CapturedPhoto.swift */,
 				9DBB18B32F5FFF370019775B /* GeminiLiveProvider.swift */,
+				A1B2C3D42F0A000100000012 /* AzureRealtimeProvider.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -459,6 +467,15 @@
 				A1B2C3D42F0A000100000004 /* GeminiSessionViewModel.swift */,
 			);
 			path = Gemini;
+			sourceTree = "<group>";
+		};
+		A1B2C3D42F0A000300000010 /* Azure */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D42F0A000100000010 /* AzureRealtimeConfig.swift */,
+				A1B2C3D42F0A000100000011 /* AzureRealtimeService.swift */,
+			);
+			path = Azure;
 			sourceTree = "<group>";
 		};
 		A1D522202F6300000000000E /* Services */ = {
@@ -642,6 +659,9 @@
 				9DBB18B92F5FFF370019775B /* AgentProtocol.swift in Sources */,
 				9DBB18BA2F5FFF370019775B /* VoiceAgent.swift in Sources */,
 				9DBB18BB2F5FFF370019775B /* GeminiLiveProvider.swift in Sources */,
+				A1B2C3D42F0A000200000010 /* AzureRealtimeConfig.swift in Sources */,
+				A1B2C3D42F0A000200000011 /* AzureRealtimeService.swift in Sources */,
+				A1B2C3D42F0A000200000012 /* AzureRealtimeProvider.swift in Sources */,
 				9DBB18BC2F5FFF370019775B /* VoiceModelProvider.swift in Sources */,
 				9DBB18BD2F5FFF370019775B /* ActionAgent.swift in Sources */,
 				9D7CDAC92F7AEA430001492F /* RecentTasksView.swift in Sources */,

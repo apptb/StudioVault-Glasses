@@ -58,8 +58,17 @@ class GeminiSessionViewModel: ObservableObject {
 
   /// Internal: create coordinator, connect, and start observation
   private func connectSession(config: VoiceSessionConfig) async -> Bool {
-    // Create the dual-agent stack
-    let provider = GeminiLiveProvider()
+    // Create the dual-agent stack.
+    // Provider selection driven by SettingsManager.voiceProvider (StudioVault-Glasses fork addition).
+    // Both providers conform to VoiceModelProvider and are structurally symmetric, so the rest of
+    // the coordinator + view model code paths stay protocol-oriented and unchanged.
+    let provider: any VoiceModelProvider
+    switch SettingsManager.shared.voiceProvider {
+    case .geminiLive:
+      provider = GeminiLiveProvider()
+    case .azureRealtime:
+      provider = AzureRealtimeProvider()
+    }
     let audioManager = AudioManager()
     let agentBridge = sharedAgentBridge ?? AgentBridge()
 
@@ -102,7 +111,7 @@ class GeminiSessionViewModel: ObservableObject {
       if case .error(let err) = coord.voiceAgent.connectionState {
         msg = err
       } else {
-        msg = "Failed to connect to Gemini"
+        msg = "Failed to connect to \(provider.name)"
       }
       errorMessage = msg
       stateObservation?.cancel()

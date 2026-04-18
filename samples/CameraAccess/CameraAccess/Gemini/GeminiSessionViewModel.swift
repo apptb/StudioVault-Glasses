@@ -36,14 +36,15 @@ class GeminiSessionViewModel: ObservableObject {
     isGeminiActive = true
     reconnectAttempts = 0
 
-    // Build config with conversation context if available
-    var instruction = GeminiConfig.systemInstruction
+    // Build config with provider-appropriate system instruction and tool declarations
+    let isAzure = SettingsManager.shared.voiceProvider == .azureRealtime
+    var instruction = isAzure ? AzureRealtimeConfig.systemInstruction : GeminiConfig.systemInstruction
     if let ctx = conversationContext, !ctx.isEmpty {
       instruction += "\n\n[Recent conversation for context -- the user may refer to this]\n\(ctx)"
     }
     let config = VoiceSessionConfig(
       systemInstruction: instruction,
-      toolDeclarations: ToolDeclarations.allDeclarations(),
+      toolDeclarations: isAzure ? ToolDeclarations.azureDeclarations() : ToolDeclarations.allDeclarations(),
       responseModalities: ["AUDIO"]
     )
     lastSessionConfig = config
@@ -171,14 +172,15 @@ class GeminiSessionViewModel: ObservableObject {
       try? await Task.sleep(nanoseconds: delayMs)
       guard !Task.isCancelled, let self, self.isGeminiActive else { return }
 
-      // Rebuild config with current conversation context
-      var instruction = GeminiConfig.systemInstruction
+      // Rebuild config with current provider-appropriate instruction
+      let isAzure = SettingsManager.shared.voiceProvider == .azureRealtime
+      var instruction = isAzure ? AzureRealtimeConfig.systemInstruction : GeminiConfig.systemInstruction
       if let ctx = self.conversationContext, !ctx.isEmpty {
         instruction += "\n\n[Recent conversation for context -- the user may refer to this]\n\(ctx)"
       }
       let config = VoiceSessionConfig(
         systemInstruction: instruction,
-        toolDeclarations: ToolDeclarations.allDeclarations(),
+        toolDeclarations: isAzure ? ToolDeclarations.azureDeclarations() : ToolDeclarations.allDeclarations(),
         responseModalities: ["AUDIO"]
       )
 

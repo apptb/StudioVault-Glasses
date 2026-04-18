@@ -223,6 +223,8 @@ final class SettingsManager {
     for key in [Key.geminiAPIKey, .geminiSystemPrompt, .agentBackend,
                 .agentBaseURL, .agentToken,
                 .openClawHost, .openClawPort, .openClawHookToken, .openClawGatewayToken,
+                .azureOpenAIAPIKey, .azureRealtimeBase, .azureRealtimeDeployment, .azureRealtimeSystemPrompt,
+                .hostBrokerURL, .hostBrokerToken, .voiceProvider,
                 .webrtcSignalingURL, .speakerOutputEnabled, .videoStreamingEnabled, .proactiveNotificationsEnabled,
                 .agentSessionKey, .agentSessionCreatedAt] {
       defaults.removeObject(forKey: key.rawValue)

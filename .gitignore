@@ -16,4 +16,4 @@ samples/CameraAccessAndroid/.gradle/
 samples/CameraAccessAndroid/build/
 samples/CameraAccessAndroid/app/build/
 
-docs/
+docs/.vscode/

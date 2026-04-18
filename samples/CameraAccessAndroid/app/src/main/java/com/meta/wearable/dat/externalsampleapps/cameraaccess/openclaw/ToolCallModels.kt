@@ -126,6 +126,50 @@ object ToolDeclarations {
         return JSONArray().put(executeJSON()).put(capturePhotoJSON())
     }
 
+    /**
+     * Azure OpenAI Realtime uses a different tool schema than Gemini.
+     * Each tool is a top-level object with type="function" and a function wrapper.
+     */
+    fun azureDeclarationsJSON(): JSONArray {
+        return JSONArray().apply {
+            put(azureToolWrapper("execute",
+                "Your main tool for taking real actions. Use this for everything: sending messages, searching the web, managing lists, reminders, notes, email, calendar, research, drafts, scheduling, smart home control, app interactions, or any request that goes beyond answering a question.",
+                JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("task", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Clear, detailed description of what to do. Include all relevant context.")
+                        })
+                    })
+                    put("required", JSONArray().put("task"))
+                }
+            ))
+            put(azureToolWrapper("capture_photo",
+                "Capture and save the current camera frame as a photo.",
+                JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("description", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Brief description of what is in the photo")
+                        })
+                    })
+                    put("required", JSONArray())
+                }
+            ))
+        }
+    }
+
+    private fun azureToolWrapper(name: String, description: String, parameters: JSONObject): JSONObject {
+        return JSONObject().apply {
+            put("type", "function")
+            put("name", name)
+            put("description", description)
+            put("parameters", parameters)
+        }
+    }
+
     private fun capturePhotoJSON(): JSONObject {
         return JSONObject().apply {
             put("name", "capture_photo")

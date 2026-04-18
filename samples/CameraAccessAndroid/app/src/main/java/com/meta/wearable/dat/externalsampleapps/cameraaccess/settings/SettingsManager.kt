@@ -112,6 +112,30 @@ object SettingsManager {
         get() = prefs.getLong("agentSessionCreatedAt", 0L)
         set(value) = prefs.edit().putLong("agentSessionCreatedAt", value).apply()
 
+    // -- Azure OpenAI Realtime --
+
+    var azureOpenAIAPIKey: String
+        get() = prefs.getString("azureOpenAIAPIKey", "") ?: ""
+        set(value) = prefs.edit().putString("azureOpenAIAPIKey", value).apply()
+
+    var azureRealtimeBase: String
+        get() = prefs.getString("azureRealtimeBase", "dev-vault.openai.azure.com") ?: ""
+        set(value) = prefs.edit().putString("azureRealtimeBase", value).apply()
+
+    var azureRealtimeDeployment: String
+        get() = prefs.getString("azureRealtimeDeployment", "gpt-realtime-1-5") ?: ""
+        set(value) = prefs.edit().putString("azureRealtimeDeployment", value).apply()
+
+    var azureRealtimeSystemPrompt: String
+        get() = prefs.getString("azureRealtimeSystemPrompt", DEFAULT_SYSTEM_PROMPT) ?: DEFAULT_SYSTEM_PROMPT
+        set(value) = prefs.edit().putString("azureRealtimeSystemPrompt", value).apply()
+
+    // -- Voice Provider --
+
+    var voiceProvider: String
+        get() = prefs.getString("voiceProvider", "gemini") ?: "gemini"
+        set(value) = prefs.edit().putString("voiceProvider", value).apply()
+
     // -- Reset (preserves userId) --
 
     fun resetAll() {
@@ -120,7 +144,9 @@ object SettingsManager {
             "agentBaseURL", "agentToken",
             "openClawHost", "openClawPort", "openClawHookToken", "openClawGatewayToken",
             "webrtcSignalingURL",
-            "agentSessionKey", "agentSessionCreatedAt"
+            "agentSessionKey", "agentSessionCreatedAt",
+            "azureOpenAIAPIKey", "azureRealtimeBase", "azureRealtimeDeployment",
+            "azureRealtimeSystemPrompt", "voiceProvider"
         )
         val editor = prefs.edit()
         for (key in keysToRemove) {

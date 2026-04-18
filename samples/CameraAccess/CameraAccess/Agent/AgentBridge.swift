@@ -52,6 +52,9 @@ class AgentBridge: ObservableObject {
   /// Last OpenClaw response ID for session continuity via previous_response_id
   private var lastOpenClawResponseId: String?
 
+  /// StudioVault MCP backend (Phase 2)
+  private let studioVaultBackend = StudioVaultMCPBackend.shared
+
   /// Which backend this bridge is using (reads dynamically from settings)
   var backend: AgentBackend {
     SettingsManager.shared.agentBackend
@@ -92,7 +95,7 @@ class AgentBridge: ObservableObject {
     case .openClaw:
       await checkOpenClawConnection()
     case .studioVaultMCP:
-      break // Phase 2: StudioVault MCP connection check
+      await checkStudioVaultMCPConnection()
     }
   }
 
@@ -152,6 +155,17 @@ class AgentBridge: ObservableObject {
     }
   }
 
+  private func checkStudioVaultMCPConnection() async {
+    guard StudioVaultConfig.isConfigured else {
+      connectionState = .notConfigured
+      return
+    }
+    connectionState = .checking
+    let result = await studioVaultBackend.checkConnection()
+    connectionState = result
+    NSLog("[Agent:StudioVaultMCP] Connection check: %@", String(describing: result))
+  }
+
   func resetSession() {
     let newKey = AgentBridge.newSessionKey()
     sessionKey = newKey
@@ -159,6 +173,7 @@ class AgentBridge: ObservableObject {
     sandboxUrl = nil
     sandboxAuthToken = nil
     lastOpenClawResponseId = nil
+    studioVaultBackend.disconnect()
     let settings = SettingsManager.shared
     settings.agentSessionKey = newKey
     settings.agentSessionCreatedAt = Date().timeIntervalSince1970
@@ -511,7 +526,7 @@ class AgentBridge: ObservableObject {
       case .openClaw:
         content = try await sendViaOpenClaw(prompt: task)
       case .studioVaultMCP:
-        content = "StudioVault MCP backend not yet implemented"  // Phase 2
+        content = try await studioVaultBackend.sendViaMCP(prompt: task)
       }
       NSLog("[Agent:%@] Result: %@", backend.rawValue, String(content.prefix(200)))
       if let idx = agentSteps.firstIndex(where: { $0.type == .thinking && !$0.isDone }) {

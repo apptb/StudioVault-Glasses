@@ -10,6 +10,8 @@ class GeminiLiveProvider: VoiceModelProvider {
   let id = "gemini-live"
   let name = "Gemini Live"
   let supportsVideo = true
+  let inputAudioSampleRate: Double = GeminiConfig.inputAudioSampleRate
+  let outputAudioSampleRate: Double = GeminiConfig.outputAudioSampleRate
 
   var connectionState: VoiceModelConnectionState {
     VoiceModelConnectionState(from: service.connectionState)

@@ -72,6 +72,8 @@ protocol VoiceModelProvider: AnyObject {
   var id: String { get }
   var name: String { get }
   var supportsVideo: Bool { get }
+  var inputAudioSampleRate: Double { get }
+  var outputAudioSampleRate: Double { get }
   var connectionState: VoiceModelConnectionState { get }
   var isModelSpeaking: Bool { get }
 

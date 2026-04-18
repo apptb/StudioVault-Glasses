@@ -20,6 +20,8 @@ class AzureRealtimeProvider: VoiceModelProvider {
   /// Video frames sent via conversation.item.create with input_image content parts.
   /// The Realtime API reasons over images alongside the audio context.
   let supportsVideo = true
+  let inputAudioSampleRate: Double = AzureRealtimeConfig.inputAudioSampleRate
+  let outputAudioSampleRate: Double = AzureRealtimeConfig.outputAudioSampleRate
 
   var connectionState: VoiceModelConnectionState {
     VoiceModelConnectionState(from: service.connectionState)

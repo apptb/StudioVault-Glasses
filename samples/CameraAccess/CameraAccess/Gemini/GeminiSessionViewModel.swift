@@ -69,7 +69,10 @@ class GeminiSessionViewModel: ObservableObject {
     case .azureRealtime:
       provider = AzureRealtimeProvider()
     }
-    let audioManager = AudioManager()
+    let audioManager = AudioManager(
+      inputSampleRate: provider.inputAudioSampleRate,
+      outputSampleRate: provider.outputAudioSampleRate
+    )
     let agentBridge = sharedAgentBridge ?? AgentBridge()
 
     let coord = AgentCoordinator(

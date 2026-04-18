@@ -88,6 +88,15 @@ enum ToolDeclarations {
     return [execute, capturePhoto]
   }
 
+  /// Azure OpenAI Realtime tool declarations.
+  /// Format: OpenAI function-calling schema (type: "function", function: { name, description, parameters }).
+  /// Differs from Gemini which uses bare { name, description, parameters }.
+  static func azureDeclarations() -> [[String: Any]] {
+    return [azureExecute, azureCapturePhoto]
+  }
+
+  // MARK: Gemini format
+
   static let capturePhoto: [String: Any] = [
     "name": "capture_photo",
     "description": "Capture and save the current camera frame as a photo. Use when the user asks to take a photo, capture what you see, save a picture, or snap a photo.",
@@ -117,5 +126,39 @@ enum ToolDeclarations {
       "required": ["task"]
     ] as [String: Any],
     "behavior": "BLOCKING"
+  ]
+
+  // MARK: Azure OpenAI format
+
+  static let azureCapturePhoto: [String: Any] = [
+    "type": "function",
+    "name": "capture_photo",
+    "description": "Capture and save the current camera frame as a photo. Use when the user asks to take a photo, capture what you see, save a picture, or snap a photo.",
+    "parameters": [
+      "type": "object",
+      "properties": [
+        "description": [
+          "type": "string",
+          "description": "Brief description of what is in the photo"
+        ]
+      ],
+      "required": [] as [String]
+    ] as [String: Any]
+  ]
+
+  static let azureExecute: [String: Any] = [
+    "type": "function",
+    "name": "execute",
+    "description": "Your main tool for taking real actions. Use this for everything: sending messages, searching the web, managing lists, reminders, notes, email, calendar, research, drafts, scheduling, smart home control, app interactions, or any request that goes beyond answering a question. When in doubt, use this tool.",
+    "parameters": [
+      "type": "object",
+      "properties": [
+        "task": [
+          "type": "string",
+          "description": "Clear, detailed description of what to do. Include all relevant context: names, content, platforms, quantities, etc."
+        ]
+      ],
+      "required": ["task"]
+    ] as [String: Any]
   ]
 }

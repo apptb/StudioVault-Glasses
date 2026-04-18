@@ -17,10 +17,9 @@ class AzureRealtimeProvider: VoiceModelProvider {
   let id = "azure-realtime"
   let name = "Azure OpenAI Realtime"
 
-  /// Currently false — video is not streamed over the Realtime WebSocket.
-  /// Vision is handled via a separate provider route (glasses_pov_vision_local / _remote).
-  /// Will flip to true once sendVideoFrame is implemented via conversation.item.create + image_url.
-  let supportsVideo = false
+  /// Video frames sent via conversation.item.create with input_image content parts.
+  /// The Realtime API reasons over images alongside the audio context.
+  let supportsVideo = true
 
   var connectionState: VoiceModelConnectionState {
     VoiceModelConnectionState(from: service.connectionState)

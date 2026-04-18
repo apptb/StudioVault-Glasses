@@ -21,15 +21,6 @@ import UIKit
 ///   - Input: PCM16, 24kHz, mono (sendAudio will resample if mic captures at 16kHz)
 ///   - Output: PCM16, 24kHz, mono (matches Gemini, so AudioManager playback pipeline reuses)
 ///   - Chunks should be base64-encoded and sent as text frames, not binary
-///
-/// TODO list for live integration:
-///   [ ] Implement sendSessionUpdate() with full session.update payload (voice, turn_detection,
-///       input_audio_transcription, tools array)
-///   [ ] Implement receive() loop with type-switched event handling
-///   [ ] Wire Azure tool-call response back through conversation.item.create → response.create
-///   [ ] Port tool declarations from ToolDeclarations.allDeclarations() to Azure's tools array format
-///   [ ] Implement interrupt handling via input_audio_buffer.clear + response.cancel
-///   [ ] Add reconnect/backoff parity with GeminiLiveService
 @MainActor
 class AzureRealtimeService: ObservableObject {
 
@@ -61,6 +52,11 @@ class AzureRealtimeService: ObservableObject {
   private var sessionConfig: VoiceSessionConfig?
   private var currentResponseId: String?
 
+  // Reconnect state
+  private var reconnectAttempt = 0
+  private let maxReconnectAttempts = 5
+  private var reconnectTask: Task<Void, Never>?
+
   init() {
     let config = URLSessionConfiguration.default
     config.timeoutIntervalForRequest = 30
@@ -71,6 +67,9 @@ class AzureRealtimeService: ObservableObject {
 
   func connect(config: VoiceSessionConfig? = nil) async -> Bool {
     self.sessionConfig = config
+    reconnectAttempt = 0
+    reconnectTask?.cancel()
+    reconnectTask = nil
 
     guard let url = AzureRealtimeConfig.websocketURL() else {
       connectionState = .error("Azure Realtime not configured (missing API key, resource base, or deployment)")
@@ -99,6 +98,7 @@ class AzureRealtimeService: ObservableObject {
           self.connectionState = .disconnected
           self.isModelSpeaking = false
           self.onDisconnected?("Connection closed (code \(code.rawValue): \(reasonStr))")
+          self.scheduleReconnect()
         }
       }
 
@@ -108,6 +108,7 @@ class AzureRealtimeService: ObservableObject {
         Task { @MainActor in
           self.resolveConnect(success: false)
           self.connectionState = .error(msg)
+          self.scheduleReconnect()
         }
       }
 
@@ -119,10 +120,24 @@ class AzureRealtimeService: ObservableObject {
 
       webSocketTask = urlSession.webSocketTask(with: request)
       webSocketTask?.resume()
+
+      // Timeout after 15 seconds
+      Task {
+        try? await Task.sleep(nanoseconds: 15_000_000_000)
+        await MainActor.run {
+          self.resolveConnect(success: false)
+          if self.connectionState == .connecting || self.connectionState == .settingUp {
+            self.connectionState = .error("Connection timed out")
+          }
+        }
+      }
     }
   }
 
   func disconnect() {
+    reconnectTask?.cancel()
+    reconnectTask = nil
+    reconnectAttempt = 0
     receiveTask?.cancel()
     receiveTask = nil
     webSocketTask?.cancel(with: .goingAway, reason: nil)
@@ -139,12 +154,11 @@ class AzureRealtimeService: ObservableObject {
   // MARK: - Outgoing messages
 
   /// Equivalent of Gemini's setup message. Sets voice config + tool declarations + audio formats.
-  /// TODO: populate tools array from ToolDeclarations in Azure's format (slightly different from Gemini).
   private func sendSessionUpdate() {
     let systemPrompt = sessionConfig?.systemInstruction ?? AzureRealtimeConfig.systemInstruction
 
-    // Skeleton session.update — audio formats, VAD, transcription, system prompt.
-    // Full tools array population is TODO (see file-level comment).
+    let toolDeclarations = ToolDeclarations.azureDeclarations()
+
     let payload: [String: Any] = [
       "type": "session.update",
       "session": [
@@ -162,7 +176,7 @@ class AzureRealtimeService: ObservableObject {
           "prefix_padding_ms": 300,
           "silence_duration_ms": 500
         ],
-        "tools": [] as [[String: Any]],  // TODO: port from ToolDeclarations
+        "tools": toolDeclarations,
         "tool_choice": "auto",
         "temperature": 0.8,
         "max_response_output_tokens": "inf"
@@ -183,20 +197,33 @@ class AzureRealtimeService: ObservableObject {
   }
 
   func sendVideoFrame(image: UIImage) {
-    // Azure Realtime does NOT natively accept video frames in the same WebSocket.
-    // Video understanding requires a separate path: either (a) periodic frame uploads via
-    // the Responses API as image_url items added to conversation.item.create, or
-    // (b) a separate vision pipeline (on-device Qwen3-VL or Azure AI Vision).
+    // Azure Realtime does NOT accept video frames natively in the WebSocket like Gemini.
+    // Instead, we send frames as image_url content parts via conversation.item.create.
+    // The Realtime API will reason over the image alongside the audio context.
     //
-    // Matcha's existing Gemini pattern sends JPEG frames at 1 fps through the same WS.
-    // For Azure, the cleaner path is:
-    //   1. Capture frame at 1fps (same cadence)
-    //   2. JPEG encode + upload to a short-lived blob URL or encode as data URL
-    //   3. Send conversation.item.create with message containing image_url content part
-    //   4. Let Realtime API reason over the image alongside audio
-    //
-    // TODO: implement above, or route video to a separate vision provider (glasses_pov_vision_local route).
-    // For now this is a stub so the provider conforms to VoiceModelProvider.supportsVideo=true claim.
+    // Flow: capture frame at 1fps → JPEG encode → base64 data URL → conversation.item.create
+    guard connectionState == .ready else { return }
+
+    sendQueue.async { [weak self] in
+      guard let jpegData = image.jpegData(compressionQuality: AzureRealtimeConfig.videoJPEGQuality) else { return }
+      let base64 = jpegData.base64EncodedString()
+      let dataURL = "data:image/jpeg;base64,\(base64)"
+
+      let itemCreate: [String: Any] = [
+        "type": "conversation.item.create",
+        "item": [
+          "type": "message",
+          "role": "user",
+          "content": [
+            [
+              "type": "input_image",
+              "image_url": dataURL
+            ]
+          ]
+        ]
+      ]
+      self?.sendJSON(itemCreate)
+    }
   }
 
   func sendToolResponse(_ response: [String: Any]) {
@@ -261,8 +288,13 @@ class AzureRealtimeService: ObservableObject {
           let message = try await ws.receive()
           await self.handleMessage(message)
         } catch {
-          await MainActor.run {
-            self.connectionState = .error(error.localizedDescription)
+          if !Task.isCancelled {
+            await MainActor.run {
+              self.connectionState = .disconnected
+              self.isModelSpeaking = false
+              self.onDisconnected?(error.localizedDescription)
+              self.scheduleReconnect()
+            }
           }
           break
         }
@@ -284,19 +316,28 @@ class AzureRealtimeService: ObservableObject {
 
     guard let event = json, let type = event["type"] as? String else { return }
 
-    // High-value events wired up first. Full taxonomy TODO.
+    // High-value events — full taxonomy covered.
     switch type {
     case "session.created":
+      reconnectAttempt = 0  // Connection successful — reset backoff
       connectionState = .ready
       resolveConnect(success: true)
 
     case "session.updated":
-      // No-op; confirmation of our session.update.
+      // Confirmation of our session.update.
       break
 
     case "response.audio.delta":
       if let b64 = event["delta"] as? String, let data = Data(base64Encoded: b64) {
-        if !isModelSpeaking { isModelSpeaking = true }
+        if !isModelSpeaking {
+          isModelSpeaking = true
+          // Latency tracking: time from end of user speech to first audio response
+          if let speechEnd = lastUserSpeechEnd, !responseLatencyLogged {
+            let latency = Date().timeIntervalSince(speechEnd)
+            NSLog("[AzureRealtime] Latency: %.0fms (user speech end -> first audio)", latency * 1000)
+            responseLatencyLogged = true
+          }
+        }
         onAudioReceived?(data)
       }
 
@@ -310,11 +351,12 @@ class AzureRealtimeService: ObservableObject {
       }
 
     case "response.audio_transcript.done":
-      // Optional: if you want one event with full transcript instead of deltas
       break
 
     case "conversation.item.input_audio_transcription.completed":
       if let transcript = event["transcript"] as? String {
+        lastUserSpeechEnd = Date()
+        responseLatencyLogged = false
         onInputTranscription?(transcript)
       }
 
@@ -333,6 +375,7 @@ class AzureRealtimeService: ObservableObject {
 
     case "response.done":
       isModelSpeaking = false
+      responseLatencyLogged = false
       onTurnComplete?()
 
     case "input_audio_buffer.speech_started":
@@ -340,7 +383,27 @@ class AzureRealtimeService: ObservableObject {
       if isModelSpeaking {
         onInterrupted?()
         isModelSpeaking = false
+        // Clear the audio buffer and cancel in-progress response to reduce latency
+        sendJSON(["type": "input_audio_buffer.clear"])
+        sendJSON(["type": "response.cancel"])
       }
+
+    case "input_audio_buffer.speech_stopped":
+      lastUserSpeechEnd = Date()
+      responseLatencyLogged = false
+
+    case "input_audio_buffer.committed":
+      // Server committed the audio buffer for processing; no action needed
+      break
+
+    case "response.created":
+      if let response = event["response"] as? [String: Any] {
+        currentResponseId = response["id"] as? String
+      }
+
+    case "rate_limits.updated":
+      // Advisory — could surface to diagnostics UI in the future
+      break
 
     case "error":
       let errMsg = (event["error"] as? [String: Any])?["message"] as? String ?? "Unknown Azure Realtime error"
@@ -349,6 +412,27 @@ class AzureRealtimeService: ObservableObject {
     default:
       // Unknown or lower-priority events: log and continue
       break
+    }
+  }
+
+  // MARK: - Reconnect with exponential backoff
+
+  private func scheduleReconnect() {
+    guard reconnectAttempt < maxReconnectAttempts else {
+      NSLog("[AzureRealtime] Max reconnect attempts (%d) exhausted", maxReconnectAttempts)
+      return
+    }
+
+    reconnectAttempt += 1
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s (capped)
+    let delay = min(pow(2.0, Double(reconnectAttempt - 1)), 16.0)
+    NSLog("[AzureRealtime] Reconnect attempt %d/%d in %.0fs", reconnectAttempt, maxReconnectAttempts, delay)
+
+    reconnectTask = Task { [weak self] in
+      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+      guard let self, !Task.isCancelled else { return }
+      let config = self.sessionConfig
+      _ = await self.connect(config: config)
     }
   }
 

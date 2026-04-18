@@ -91,6 +91,8 @@ class AgentBridge: ObservableObject {
       await checkE2BConnection()
     case .openClaw:
       await checkOpenClawConnection()
+    case .studioVaultMCP:
+      break // Phase 2: StudioVault MCP connection check
     }
   }
 
@@ -508,6 +510,8 @@ class AgentBridge: ObservableObject {
         content = try await sendDirectOrFallback(prompt: task)
       case .openClaw:
         content = try await sendViaOpenClaw(prompt: task)
+      case .studioVaultMCP:
+        content = "StudioVault MCP backend not yet implemented"  // Phase 2
       }
       NSLog("[Agent:%@] Result: %@", backend.rawValue, String(content.prefix(200)))
       if let idx = agentSteps.firstIndex(where: { $0.type == .thinking && !$0.isDone }) {

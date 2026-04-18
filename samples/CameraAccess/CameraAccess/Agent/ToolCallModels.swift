@@ -11,6 +11,12 @@ struct GeminiFunctionCall {
 struct GeminiToolCall {
   let functionCalls: [GeminiFunctionCall]
 
+  /// Direct memberwise init (used by Azure provider)
+  init(functionCalls: [GeminiFunctionCall]) {
+    self.functionCalls = functionCalls
+  }
+
+  /// Failable init from Gemini-format JSON
   init?(json: [String: Any]) {
     guard let toolCall = json["toolCall"] as? [String: Any],
           let calls = toolCall["functionCalls"] as? [[String: Any]] else {

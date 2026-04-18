@@ -58,6 +58,7 @@
 		9DBB18D42F60A2100019775B /* ToolCallModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18D02F60A2100019775B /* ToolCallModels.swift */; };
 		9DBB18D52F60A2100019775B /* ToolCallRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18D12F60A2100019775B /* ToolCallRouter.swift */; };
 		9DBB18D62F60A2100019775B /* AgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBB18CE2F60A2100019775B /* AgentBridge.swift */; };
+		4D42875F79274B5953A15D24 /* OpenClawEventClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7477BE3CB883A54399FAC746 /* OpenClawEventClient.swift */; };
 		9DCC22A02F60FE240019775B /* MarkdownTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCC229F2F60FE240019775B /* MarkdownTextView.swift */; };
 		9DD6CAAF2F3C426600ED7098 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD6CAAD2F3C426600ED7098 /* Secrets.swift */; };
 		9DD6CAFE2F3C62DA00ED7098 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = 9DD6CAFD2F3C62DA00ED7098 /* WebRTC */; };
@@ -169,6 +170,7 @@
 		9DBB18CF2F60A2100019775B /* AgentConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentConfig.swift; sourceTree = "<group>"; };
 		9DBB18D02F60A2100019775B /* ToolCallModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallModels.swift; sourceTree = "<group>"; };
 		9DBB18D12F60A2100019775B /* ToolCallRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallRouter.swift; sourceTree = "<group>"; };
+		7477BE3CB883A54399FAC746 /* OpenClawEventClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenClawEventClient.swift; sourceTree = "<group>"; };
 		9DCC229F2F60FE240019775B /* MarkdownTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextView.swift; sourceTree = "<group>"; };
 		9DD6CAAD2F3C426600ED7098 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		9DD6CAAE2F3C426600ED7098 /* Secrets.swift.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Secrets.swift.example; sourceTree = "<group>"; };
@@ -427,6 +429,7 @@
 				9DBB18CF2F60A2100019775B /* AgentConfig.swift */,
 				9DBB18D02F60A2100019775B /* ToolCallModels.swift */,
 				9DBB18D12F60A2100019775B /* ToolCallRouter.swift */,
+				7477BE3CB883A54399FAC746 /* OpenClawEventClient.swift */,
 			);
 			path = Agent;
 			sourceTree = "<group>";
@@ -666,6 +669,7 @@
 				9DBB18BD2F5FFF370019775B /* ActionAgent.swift in Sources */,
 				9D7CDAC92F7AEA430001492F /* RecentTasksView.swift in Sources */,
 				9DBB18BE2F5FFF370019775B /* AgentCoordinator.swift in Sources */,
+				4D42875F79274B5953A15D24 /* OpenClawEventClient.swift in Sources */,
 				A1C4114A2F6200000000000A /* CallManager.swift in Sources */,
 				A1D5220A2F6300000000000A /* CapturedPhoto.swift in Sources */,
 				A1D5220C2F6300000000000B /* PhotoCaptureStore.swift in Sources */,

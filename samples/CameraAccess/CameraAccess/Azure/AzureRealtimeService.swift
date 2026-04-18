@@ -45,7 +45,7 @@ class AzureRealtimeService: ObservableObject {
   private var webSocketTask: URLSessionWebSocketTask?
   private var receiveTask: Task<Void, Never>?
   private var connectContinuation: CheckedContinuation<Bool, Never>?
-  private let delegate = WebSocketDelegate()
+  private let delegate = AzureWebSocketDelegate()
   private var urlSession: URLSession!
   private let sendQueue = DispatchQueue(label: "azure.realtime.send", qos: .userInitiated)
 
@@ -81,7 +81,7 @@ class AzureRealtimeService: ObservableObject {
     return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
       self.connectContinuation = continuation
 
-      self.delegate.onOpen = { [weak self] _ in
+      self.delegate.onOpen = { [weak self] (_: String?) in
         guard let self else { return }
         Task { @MainActor in
           self.connectionState = .settingUp
@@ -222,7 +222,9 @@ class AzureRealtimeService: ObservableObject {
           ]
         ]
       ]
-      self?.sendJSON(itemCreate)
+      Task { @MainActor in
+        self?.sendJSON(itemCreate)
+      }
     }
   }
 
@@ -449,6 +451,41 @@ class AzureRealtimeService: ObservableObject {
           NSLog("AzureRealtimeService send error: \(error.localizedDescription)")
         }
       }
+    }
+  }
+}
+
+// MARK: - WebSocket Delegate
+
+private class AzureWebSocketDelegate: NSObject, URLSessionWebSocketDelegate {
+  var onOpen: ((String?) -> Void)?
+  var onClose: ((URLSessionWebSocketTask.CloseCode, Data?) -> Void)?
+  var onError: ((Error?) -> Void)?
+
+  func urlSession(
+    _ session: URLSession,
+    webSocketTask: URLSessionWebSocketTask,
+    didOpenWithProtocol protocol: String?
+  ) {
+    onOpen?(`protocol`)
+  }
+
+  func urlSession(
+    _ session: URLSession,
+    webSocketTask: URLSessionWebSocketTask,
+    didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
+    reason: Data?
+  ) {
+    onClose?(closeCode, reason)
+  }
+
+  func urlSession(
+    _ session: URLSession,
+    task: URLSessionTask,
+    didCompleteWithError error: Error?
+  ) {
+    if let error {
+      onError?(error)
     }
   }
 }

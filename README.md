@@ -209,6 +209,8 @@ Without either backend configured, the AI is voice + vision only (no task execut
 
 The E2B backend runs a Claude Agent SDK sandbox in the cloud. It supports real-time streaming of tool execution progress (which tools are running, their results, etc.).
 
+Authoritative deployment/runbook guidance for `agent/` lives in `docs/deployment.md` (Vercel is the standard path; Netlify checks are out of scope for this service).
+
 ### 1. Deploy the agent
 
 Deploy the `agent/` directory to Vercel:

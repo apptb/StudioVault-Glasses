@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRequest } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  // Auth check (optional -- allow health check without token for connectivity test)
-  const apiToken = request.headers.get("x-api-token");
-  if (process.env.AGENT_TOKEN && apiToken && apiToken !== process.env.AGENT_TOKEN) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeRequest(request, {
+    action: "agent.health.read",
+    resource: "/api/agent/health",
+    requireUser: false,
+    requireSession: false,
+  });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   if (process.env.E2B_API_KEY && process.env.E2B_TEMPLATE_ID) {

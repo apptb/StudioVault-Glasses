@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserSessions, getMessages, getMessageCount } from "@/lib/session-store";
+import { authorizeRequest, authorizeUserScope } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,14 @@ interface SessionSummary {
  * List recent sessions for a user with first user message and last assistant response.
  */
 export async function GET(request: NextRequest) {
-  const apiToken = request.headers.get("x-api-token");
-  if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeRequest(request, {
+    action: "agent.sessions.read",
+    resource: "/api/agent/sessions",
+    requireUser: true,
+    requireSession: false,
+  });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const userId = request.nextUrl.searchParams.get("userId");
@@ -29,6 +35,13 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+  const scopeError = await authorizeUserScope(
+    auth.context,
+    userId,
+    "agent.sessions.read",
+    "/api/agent/sessions"
+  );
+  if (scopeError) return scopeError;
 
   const limit = Math.min(
     parseInt(request.nextUrl.searchParams.get("limit") || "20", 10),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateSandbox } from "@/lib/sandbox";
 import { log } from "@/lib/logger";
+import { authorizeRequest } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,10 +16,14 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   let sessionKey = "unknown";
   try {
-    // Auth check
-    const apiToken = request.headers.get("x-api-token");
-    if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authorizeRequest(request, {
+      action: "agent.init",
+      resource: "/api/agent/init",
+      requireUser: true,
+      requireSession: true,
+    });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Verify E2B is configured
@@ -29,10 +34,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    sessionKey =
-      request.headers.get("x-agent-session-key") ||
-      `anonymous:${Date.now()}`;
-    const userId = request.headers.get("x-agent-user-id") || "";
+    sessionKey = auth.context.sessionKey;
+    const userId = auth.context.actor;
 
     console.log(`[Init] Session: ${sessionKey}, userId: ${userId.slice(0, 8)}...`);
 

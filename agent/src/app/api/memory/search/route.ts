@@ -5,6 +5,7 @@ import {
   embed,
   cosineSimilarity,
 } from "@/lib/embeddings";
+import { authorizeRequest, authorizeUserScope } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,14 @@ interface ScoredChunk {
  * Returns top-5 matching chunks with file name, snippet, and score.
  */
 export async function GET(request: NextRequest) {
-  const apiToken = request.headers.get("x-api-token");
-  if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeRequest(request, {
+    action: "memory.search",
+    resource: "/api/memory/search",
+    requireUser: true,
+    requireSession: false,
+  });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const userId = request.nextUrl.searchParams.get("userId");
@@ -37,6 +43,13 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+  const scopeError = await authorizeUserScope(
+    auth.context,
+    userId,
+    "memory.search",
+    "/api/memory/search"
+  );
+  if (scopeError) return scopeError;
 
   const allContent = await getAllMemoryContent(userId);
   if (allContent.length === 0) {

@@ -11,6 +11,7 @@ import {
   getMessages,
   compactMessages,
 } from "@/lib/session-store";
+import { authorizeRequest } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -26,13 +27,14 @@ interface ChatMessage {
 export async function POST(request: NextRequest) {
   let sessionKey = "unknown";
   try {
-    // Auth: simple shared token
-    const apiToken = request.headers.get("x-api-token");
-    if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    const auth = await authorizeRequest(request, {
+      action: "agent.chat",
+      resource: "/api/agent/chat",
+      requireUser: true,
+      requireSession: true,
+    });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await request.json();
@@ -53,11 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    sessionKey =
-      request.headers.get("x-agent-session-key") ||
-      `anonymous:${Date.now()}`;
-    const userId =
-      request.headers.get("x-agent-user-id") || "";
+    sessionKey = auth.context.sessionKey;
+    const userId = auth.context.actor;
 
     console.log(`[Agent] E2B mode, session: ${sessionKey}, userId: ${userId.slice(0, 8)}...`);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appendMessage } from "@/lib/session-store";
 import { log } from "@/lib/logger";
+import { authorizeRequest, authorizeUserScope } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +13,14 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
-    const apiToken = request.headers.get("x-api-token");
-    if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authorizeRequest(request, {
+      action: "agent.persist",
+      resource: "/api/agent/persist",
+      requireUser: true,
+      requireSession: true,
+    });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await request.json();
@@ -24,6 +30,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "sessionKey required" },
         { status: 400 }
+      );
+    }
+
+    const userScopeError = await authorizeUserScope(
+      auth.context,
+      userId,
+      "agent.persist",
+      "/api/agent/persist",
+      sessionKey
+    );
+    if (userScopeError) return userScopeError;
+
+    if (sessionKey !== auth.context.sessionKey) {
+      return NextResponse.json(
+        { error: "Unauthorized", reason: "session_scope_mismatch" },
+        { status: 401 }
       );
     }
 

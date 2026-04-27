@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMemory, getDailyLog, getNamedMemory } from "@/lib/memory-store";
+import { authorizeRequest, authorizeUserScope } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +10,14 @@ export const dynamic = "force-dynamic";
  * Read persistent memory content.
  */
 export async function GET(request: NextRequest) {
-  const apiToken = request.headers.get("x-api-token");
-  if (process.env.AGENT_TOKEN && apiToken !== process.env.AGENT_TOKEN) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeRequest(request, {
+    action: "memory.read",
+    resource: "/api/memory/read",
+    requireUser: true,
+    requireSession: false,
+  });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const userId = request.nextUrl.searchParams.get("userId");
@@ -23,6 +29,13 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+  const scopeError = await authorizeUserScope(
+    auth.context,
+    userId,
+    "memory.read",
+    "/api/memory/read"
+  );
+  if (scopeError) return scopeError;
 
   if (file === "core") {
     const content = await getMemory(userId);

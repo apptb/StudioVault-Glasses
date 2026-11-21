@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4c3a4e9a-386d-457b-bcfc-27ae4de1b88f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/base.json",
+  "output": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.base.html",
+  "specification": {
+    "sha256": "909885c1692ade753301db39af74a75135991e00643b5bed39529a0dcab64a6a",
+    "bytes": 6156
+  },
+  "artifact": {
+    "sha256": "8e20b4ccf4adaca6ceaf0998f7f77f41423a8cca285d9b1c566314ff5da1ff11",
+    "bytes": 846938
+  }
+}

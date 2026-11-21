@@ -1,59 +1,70 @@
 # GLASSES-1 program package
 
-Everything an agent or the operator needs to run the glasses assistant build. Written on 2026-11-20 for two readers: Duet (the Claude cloud thread, lane `duet`) and Claude Code (local or web). Either can pick the work up cold from these files.
+Everything an agent or the operator needs to run the glasses assistant build. Written for two readers: Duet (the operator's Claude cloud thread, lane `duet`) and Claude Code (local or web). Either can pick the work up cold from these files.
+
+This repository is public. The package carries no host names, local paths or key locations; the operator holds those in a private notes file.
 
 | File | Read it for | Who edits it |
 |---|---|---|
-| [DUET-WORK-ORDER.md](DUET-WORK-ORDER.md) | The one-shot prompt. Paste it, or attach it with the three files below. | Operator and planner only |
-| [PLAN.md](PLAN.md) | Requirements, decisions, architecture, milestones, gates, risks | Planner; a change is a ledger `decision` line first |
+| [DUET-WORK-ORDER.md](DUET-WORK-ORDER.md) | The one-shot prompt. Paste it, or attach it with the four files below. | Operator, or whoever writes the next work order |
+| [PLAN.md](PLAN.md) | Requirements, decisions, architecture, milestones, gates, risks | Any lane; a change to a decision is a ledger `decision` line first |
 | [TODO.md](TODO.md) | The task board: one line per task with owner, gate and state | Anyone, through `ledger.py task` |
-| [RESOURCES.md](RESOURCES.md) | Repos, SDKs, versions, accounts, endpoints, credential names | Anyone, when a probe changes a fact |
+| [RESOURCES.md](RESOURCES.md) | Repositories, models, SDKs, harnesses, vendor requirements | Anyone, when a probe changes a fact |
 | [LEDGER.jsonl](LEDGER.jsonl) | The machine record: append-only JSON, one event per line | Nobody by hand; `ledger.py` only |
-| [EXECUTION-LOG.md](EXECUTION-LOG.md) | The same record for people, in the operator's round format | Nobody by hand; `ledger.py render` |
-| [../architecture/glasses-assistant/](../architecture/glasses-assistant/) | The before and target architecture models and the preview page | Planner, at milestone ends |
+| [EXECUTION-LOG.md](EXECUTION-LOG.md) | The same record for people. Each ledger line becomes a "round" with a sentence heading, the finding, its evidence and what is waiting on the operator, in the shape of the operator's own execution log | Nobody by hand; `ledger.py render` |
+| [../architecture/glasses-assistant/](../architecture/glasses-assistant/) | The as-found and target architecture models, the Archify pages and their receipts | Any lane, at milestone ends |
+
+`reports/` holds probe and review results, named by task. `packets/` holds work written for another lane to run. `closeouts/` holds end-of-milestone summaries.
 
 ## The update loop
 
-Work changes three things together: the task board, the ledger, and the rendered log. One command does the first two; a second does the third.
+Work changes three things: the task board, the ledger, and the rendered log.
 
 ```bash
 # start a task
 python3 tools/program/ledger.py task M0-03 --to running \
   --lane duet --who "Claude Duet (duet)" --rationale "Starting the reach probe"
 
-# finish it: done needs evidence
+# finish it: done needs evidence, and says how far it got
 python3 tools/program/ledger.py task M0-03 --to done \
   --lane duet --who "Claude Duet (duet)" \
-  --rationale "Gateway answered an image request through LiteLLM" \
-  --evidence "curl 200 /v1/chat/completions, local.mac-fast, 2026-11-21T14:02Z" \
-  --grade A --basis "ran it myself, response read back"
+  --rationale "This lane can read and write the repository; it has no shell on the Mac" \
+  --evidence "git push of a test branch succeeded" --evidence "no machine is attached to the thread" \
+  --reached verified --grade A --basis "ran it myself"
 
 # record a finding, a decision, a correction or a gate that is not a task change
-python3 tools/program/ledger.py append --kind probe --state verified \
-  --title "LiteLLM passes image parts to mac-fast" \
+python3 tools/program/ledger.py append --kind probe --state verified --reached executed \
+  --title "LiteLLM passes image parts to the fast Mac route" \
   --lane claude-code-local --who "Claude Code (local)" \
-  --rationale "A 1280px JPEG was described correctly through :4000" \
-  --evidence "reports/20261121/vision-probe.json"
+  --rationale "A 1280px JPEG was described correctly through the router" \
+  --evidence "docs/program/reports/M0-04-fabric-probe.md"
 
-# then, before every commit
+# close one item that was waiting on the operator: round 9, item 2
+python3 tools/program/ledger.py append --kind gate --state accepted \
+  --title "The operator chose a private repository for the working code" \
+  --lane duet --who "Claude Duet (duet)" --rationale "Answer to O-9" \
+  --approval "operator 2026-11-22T15:04Z: private repo" --evidence "thread message" --resolves 9:2
+
+# before every commit of the record
 python3 tools/program/ledger.py render
 python3 tools/program/ledger.py validate
 ```
 
-`validate` fails when the ledger is out of sequence, a line lacks required fields, a `verified` line has no evidence, a task's checkbox and state disagree, a line looks like it contains a credential, or the rendered log is stale. Commit `TODO.md`, `LEDGER.jsonl` and `EXECUTION-LOG.md` together, in the same commit as the work they describe.
+Commit in two steps. First the work. Then the record, citing the work's commit with `--commit <sha>` or as evidence: `TODO.md`, `LEDGER.jsonl` and `EXECUTION-LOG.md` together.
+
+`validate` fails when the ledger is out of sequence, a line lacks required fields, a `verified` line has no evidence, the board and the ledger disagree about a task's state, a line looks like it contains a credential, or the rendered log is stale. `bash tools/program/ledger_test.sh` exercises all of this in a throwaway copy.
 
 ## Rules that keep the record honest
 
-1. **Done needs a probe.** A task moves to `done` only with evidence someone could re-run: a command and its result, a build id, a commit, a trace id. Configured, loaded, executed, verified and accepted are different states; say which one you reached.
-2. **Accepted is the operator's word.** Agents stop at `done`. `accepted` is set from the `operator` lane, or with the operator's words quoted in `--approval`.
-3. **Corrections are first-class.** When an earlier line turns out wrong, append a `correction` with `--supersedes <seq>`. Never rewrite a line. The rendered log marks the old round as superseded.
-4. **Human-held items are named.** Anything only the operator can do goes in `--human-held`. It stays in the open list at the bottom of the log until a later line closes it with `--resolves <seq>`.
-5. **No secret values, ever.** The ledger records credential names and locations. The tool refuses lines that look like keys or tokens; that check is a backstop, not permission to try.
+1. **Done needs a probe.** A task moves to `done` only with evidence someone could re-run: a command and its result, a build id, a commit, a trace id. Say how far it got with `--reached configured|loaded|executed|verified`.
+2. **Accepted is the operator's word.** Agents stop at `done`. Moving a task into or out of `accepted` needs the operator's words and time in `--approval`. The tool cannot check who is typing; it only refuses the move without a quote.
+3. **Probes beat the plan.** When a probe contradicts PLAN.md, log the finding as a `probe` line and update section 2 of the plan in the same change. Use `correction --supersedes <seq>` only to correct an earlier ledger line.
+4. **Human-held items are named and numbered.** Anything only the operator can do goes in `--human-held`. It stays in the open list at the bottom of the log until a later line closes that item with `--resolves ROUND:ITEM`. A correction does not close items.
+5. **No secret values, ever, and no machine-identifying detail.** The tool refuses lines that look like keys or tokens; that check is a backstop. Host names, paths and key locations belong in the operator's private notes.
 6. **Say what you did not touch.** Use `--not-touched` when a reader might assume you restarted, pushed, signed or deleted something.
-7. **Two writers, one file.** Duet and Claude Code both append here. Pull before you append, and push right after. The tool takes a file lock and re-reads the tail, which covers two processes on one machine; across machines, Git is the lock.
+7. **Two writers, one file.** Pull before you append, push right after. On one machine the tool takes a file lock. Across machines Git is the lock: if a merge leaves two lines with the same sequence number, keep both lines, run `ledger.py resequence`, then `render` and `validate`.
+8. **One home for the record.** Until the working line exists (M0-07), the record lives on the planning branch. After that it lives only on the working line.
 
 ## Feeding the vault
 
-`LEDGER.jsonl` is the JSON the vault's collection agent reads; `EXECUTION-LOG.md` is the user-facing log it renders to, in the same shape as the operator's fabric execution log. Each line carries `work_id`, `lane`, `who`, `kind`, `state`, `evidence`, `owner`, `rollback`, `closes_on` and a quality grade, so the daily, weekly and monthly rollups can group by lane, list what is verified versus partial, and surface what is waiting on the operator.
-
-Vault convention puts plans, ledgers and handoffs in the vault and code in the repository. This package lives in the repository on purpose, so that a cloud thread and a local session share one copy through Git. Task `M0-02` files a pointer note in the vault; the plan lists moving the package into the vault as an operator decision (`D-08`).
+`LEDGER.jsonl` is the JSON the vault's collection agent reads; `EXECUTION-LOG.md` is the user-facing log rendered from it. Each line carries `work_id`, `lane`, `who`, `kind`, `state`, `reached`, `evidence`, `owner`, `rollback`, `closes_on` and a quality grade, so the daily, weekly and monthly rollups can group by lane, list what is verified versus partial, and surface what is waiting on the operator.

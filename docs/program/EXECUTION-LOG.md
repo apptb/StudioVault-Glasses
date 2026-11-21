@@ -3,114 +3,126 @@
 Rendered from `docs/program/LEDGER.jsonl` by `tools/program/ledger.py render`. Do not edit by hand;
 append a ledger line and render again. No secrets are recorded here.
 
-## Round 1 — No live system was reachable; the plan rests on files, the operator's log and vendor pages (2026-11-20 23:58Z)
+## Round 1 — The fork is the Matcha lineage on Meta SDK 0.4.0 and calls four vendor clouds from the phone (2026-11-21 01:05Z)
 
-- **Probe.** This cloud session had the repositories, the uploaded execution log and web access. The gateway connector failed to connect and there was no Mac, phone or glasses. Every statement about the fabric is from the log of 2026-11-17 to 11-19 and is unverified until M0-04.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade C (Claude Code (web); nothing probed).
-- Closes on: M0-03 and M0-04 report from a lane with a shell on the Mac.
-- Not touched: No machine, service, account or shared config.
-- Evidence: `StudioVault-Gateway connector: 502 at session start`; `docs/program/PLAN.md section 2`
+- **Probe.** Read at commit 73c5318. The SDK pin is exact at 0.4.0. The app opens connections to Gemini, an Azure realtime endpoint and an agent backend on Vercel with an E2B sandbox, and holds their keys on the phone.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); read the files at the pinned commit).
+- Not touched: Nothing was built or run; the code was read.
+- Evidence: `samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj:976-983 @73c5318`; `samples/CameraAccess/CameraAccess/Gemini/GeminiConfig.swift:4 @73c5318`; `samples/CameraAccess/CameraAccess/Azure/AzureRealtimeConfig.swift:104 @73c5318`; `samples/CameraAccess/CameraAccess/Agent/AgentConfig.swift:3-12 @73c5318`
 
-## Round 2 — The fork's main cannot build from a fresh clone and is nine SDK releases behind (2026-11-20 23:58Z)
+## Round 2 — Upstream VisionClaw at 3f39807 is the smaller and newer base (2026-11-21 01:05Z)
 
-- **Probe.** Secrets.swift is a compiled source but ignored; Package.resolved is absent and hidden by a workspace ignore rule; the WebRTC package is referenced twice; the tests import a module no target links; bundle id and team are the upstream author's; the SDK pin is 0.4.0 against a current 1.1.0. Read in the project file, never compiled.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade B (Claude Code (web); read directly; no build).
-- Closes on: M0-10 compiles the chosen baseline on the Mac.
-- Evidence: `samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj:63,981`; `samples/CameraAccess/.gitignore:9,12`; `.gitignore:10`
+- **Probe.** Upstream is on Meta SDK 0.9.0, whose API shape 1.x keeps, and has the audio-route handling, intents and earcons this product needs. Its photo call needs a live video stream. Neither tree was compiled here.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); read the files at the pinned commit).
+- Evidence: `Intent-Lab/VisionClaw @3f39807, project.pbxproj:683`; `docs/program/PLAN.md section 2`
 
-## Round 3 — Upstream VisionClaw is the newer app, and every model and task call in it goes to a vendor cloud (2026-11-20 23:58Z)
+## Round 3 — The Mac and DGX fabric is known only from the operator's log; nothing on it was probed (2026-11-21 01:05Z)
 
-- **Probe.** At 3f39807 upstream pins SDK 0.9.0, has a shared scheme, the still-photo call, Siri and Action Button intents, earcons and the glasses audio-route handling. It depends on LiveKit Cloud, Gemini Live or OpenAI Realtime, Anthropic Managed Agents and Browser Use Cloud, and its gateway answers tool confirmations with allow automatically. Its only licence file is Meta's developer terms.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade B (Claude Code (web); read directly; not run).
-- Evidence: `Intent-Lab/VisionClaw@3f39807 samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj:683`; `Intent-Lab/VisionClaw@3f39807 agent/main.py:1-18`; `Intent-Lab/VisionClaw@3f39807 gateway/src/turn.ts:12-26`; `Intent-Lab/VisionClaw@3f39807 gateway/src/browse.ts:1-11`; `Intent-Lab/VisionClaw@3f39807 LICENSE`
+- **Probe.** The log describes a model router with local routes, local model servers and proxies, a GLM model on the DGX pair, a daily synthesis worker and a trace store. It records text tool calls through the router and no image request through it. It mentions no speech-to-text service. No lane has yet tried an image through the router, which the design depends on.
+- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Reached: configured. Owner: operator. Grade B (Claude Code (web); one written source, not probed).
+- Closes on: M0-04 returns an image described correctly through the router on a Mac route and a DGX route.
+- Next: M0-04 fabric probe.
+- Evidence: `operator's execution log, uploaded 2026-11-20 (not in this repository)`; `docs/program/PLAN.md section 2`
 
-## Round 4 — Ten decisions are proposed, led by building on upstream on a new branch and leaving main alone (2026-11-20 23:58Z)
+## Round 4 — Meta's toolkit is at 1.1.0; version 1.0 added a launch phrase, button events and a standalone still as experimental features (2026-11-21 01:05Z)
 
-- **Decision.** D-01 baseline is upstream on branch sovereign; D-02 a turn is one request; D-03 a small gateway on the Mac in front of LiteLLM; D-04 speech on the phone first; D-05 Xcode Cloud to TestFlight internal with a local fallback; D-06 wake strategy by measurement; D-07 safety tiers in gateway code; D-08 package in the repository with a vault pointer; D-09 iOS only; D-10 private build. Each has a default and an undo in the plan.
-- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Owner: operator. Grade B (Claude Code (web); reasoned from read evidence; no measurement yet).
-- Rollback: Each decision's undo line; D-01 is undone by deleting the sovereign branch.
-- Closes on: M0-01: a gate line per decision quoting the operator.
+- **Probe.** Eight releases separate the fork's 0.4.0 from 1.1.0. The glasses microphone is reachable only over Bluetooth hands-free audio, and iOS will not start a recording from the background. These shape the wake strategy in D-07 and the SDK move in M0-14.
+- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Reached: configured. Owner: operator. Grade B (Claude Code (web); vendor pages read once each, nothing run).
+- Closes on: M0-13 and M2-01 test the launch phrase, the capture button and photo with microphone on the real device.
+- Evidence: `docs/program/RESOURCES.md, Meta and Apple sections`
+
+## Round 5 — The operator set four directions on 2026-11-21 (2026-11-21 01:05Z)
+
+- **Gate.** Frontier APIs come first and local models second (D-04). DeepSeek Harness, Pi or OpenCode may be invoked headless (D-09). The glasses fork may be repurposed (D-01). The old vault repository is retired and is not to be cloned or relied on (D-10).
+- Lane `claude-code-web`, by Claude Code (web). State: **accepted**. Owner: operator. Grade A (Claude Code (web); the operator's own words).
+- Approval: operator 2026-11-21: 'The studio vault has been retired. Do not clone it. Studio glasses repo is something you can repurpose ... I give you authorization to invoke either the DeepSeek harness, Pi, or open code in a headless fashion ... explore using the Claude API, a DeepSeek platform API, and OpenAI's platform as initial frontier level matches, followed by ... Unsloth Studio'.
+- Evidence: `operator's message in the planning session, 2026-11-21`
+
+## Round 6 — Twelve decisions, D-01 to D-12, are proposed and wait for the operator (2026-11-21 01:05Z)
+
+- **Decision.** Build from upstream on a new working line; one request per turn; a small gateway on the Mac that speaks the Messages API through the router; frontier first; speech on the phone; Xcode Cloud for delivery and the Mac for device tests; wake strategy by measurement; safety tiers in gateway code; a headless harness lane whose model calls go through the router; the record lives in the repository; iOS only; working code in a private repository.
+- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Owner: operator. Grade B (Claude Code (web); reasoned from sources, not tested).
+- Closes on: the operator's answer to the ballot.
 - Open and human-held:
-  - Ratify or amend D-01 to D-10 (M0-01)
+  - 1. Ratify or amend D-01 to D-12 (task M0-01)
 - Evidence: `docs/program/PLAN.md section 3`
 
-## Round 5 — The log and the infrastructure map both say the Mac Studio has 256 GB; the request said 512 (2026-11-20 23:58Z)
+## Round 7 — Ten questions, O-1 to O-10, wait for the operator (2026-11-21 01:05Z)
 
-- **Probe.** The execution log calls it a 256 GB machine and sets the GPU wired limit to 245760 MB; every component title in the uploaded infrastructure map says Mac Studio 256GB. Nothing supports 512 GB. The vault repository also describes an earlier install under a different user whose tailnet node is offline.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade B (Claude Code (web); read in both uploads).
+- **Note.** Each one changes what gets built or where. They are listed with what they affect in the plan.
+- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Owner: operator. Grade A (Claude Code (web); the questions are the plan's own).
+- Closes on: each question answered; close items with --resolves ROUND:ITEM.
 - Open and human-held:
-  - O-1: is the Mac 256 GB or 512 GB, or are there two Macs
-  - O-3: confirm the m3u install with LiteLLM on :4000 is the live fabric
-- Evidence: `operator execution log line 931`; `infra-delta-20261120.html component titles`; `operator execution log line 140`
+  - 1. O-1: the request said the Mac has 512 GB; the log and the operator's map say 256 GB. Which, or are there two Macs?
+  - 2. O-2: confirm 'NVIDIA Cutter' means the two-node DGX Spark cluster
+  - 3. O-3: confirm the fabric in the log is the live one, and say where Unsloth Studio runs
+  - 4. O-4: app name, bundle id and wake phrase
+  - 5. O-5: which glasses, which iPhone, which iOS version
+  - 6. O-6: which Obsidian vault is live and which folder receives glasses notes
+  - 7. O-7: how long photos are kept on the Mac
+  - 8. O-8: which frontier accounts have keys, which OpenAI model, and the daily spend cap
+  - 9. O-9: private repository (the default) or this public fork for the working code
+  - 10. O-10: how an agent reaches the Mac
+- Evidence: `docs/program/PLAN.md section 9`
 
-## Round 6 — Nothing on the fabric is reachable from a phone, and no image has been sent through LiteLLM (2026-11-20 23:58Z)
+## Round 8 — This cloud lane can read and write the repository and cannot reach the Mac (2026-11-21 01:05Z)
 
-- **Probe.** LiteLLM listens on 127.0.0.1:4000 and Tailscale Serve publishes only the password vault. Vision was proven on the model backends by a test harness; no image request through :4000 is recorded. There is no speech-to-text service on this install. The design assumes image and tool calls work through LiteLLM, so this is the first thing to test.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade C (Claude Code (web); log only).
-- Closes on: M0-04 report.
-- Next: Run M0-04 before any gateway code is written.
-- Evidence: `operator execution log lines 19, 110, 164, 157`
+- **Probe.** Pushes to the planning branch work. No folder on the operator's computers is shared with the session, and the operator's gateway connector did not answer, so no command ran on the Mac. The headless harnesses were authorized and were not invoked; no connector was installed there; no probe ran.
+- Lane `claude-code-web`, by Claude Code (web). State: **blocked**. Reached: executed. Owner: operator. Grade A (Claude Code (web); ran it myself).
+- Closes on: a lane runs hostname on the Mac and reads the answer back (M0-03).
+- Not touched: Nothing on the Mac, the DGX pair, a phone or the glasses.
+- Next: Share one folder with a cloud session through Remote Control, or run M0-04 and M0-06 from a local session.
+- Evidence: `git push to the planning branch succeeded`; `the session's list of shared computer folders was empty on 2026-11-21`
 
-## Round 7 — Meta's SDK is at 1.1.0 with a glasses-side launch phrase; publishing is closed but TestFlight internal works (2026-11-20 23:58Z)
+## Round 9 — Machine-identifying detail was committed to this public repository; the current files no longer carry it, the first commit still does (2026-11-21 01:05Z)
 
-- **Probe.** Vendor pages read on 2026-11-20 say 1.0.0 added Hey Meta start app-name, capture-button events, on-glasses speech and a standalone still as experimental features; the current SDK needs Xcode 26.4 and iOS 17.2; the glasses microphone exists only on the hands-free profile; App Store publishing has no date. One researcher, not yet used in a build.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade C (Claude Code (web); single researcher, vendor pages).
-- Closes on: M0-12 and M0-13 on the real device.
-- Evidence: `https://github.com/meta/meta-wearables-dat-ios/blob/main/CHANGELOG.md`; `https://wearables.developer.meta.com/docs/develop/dat/voice-invocations`; `https://wearables.developer.meta.com/docs/develop/dat/microphones-and-speakers`; `https://github.com/meta/meta-wearables-dat-ios/discussions/339`
-
-## Round 8 — The program package is written: plan, task board, resources, work order and a ledger tool (2026-11-20 23:58Z)
-
-- **Change.** docs/program holds the plan with acceptance for every task through M4, a 48-task board, the resources list, the one-shot work order for Duet and a post-clone script template. tools/program/ledger.py appends, validates and renders this record and refuses lines without evidence, out-of-order lines and credential-shaped text. The tool was exercised end to end in a scratch copy, including its refusal cases.
-- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Owner: operator. Grade A (Claude Code (web); files written and the tool run in this session).
-- Rollback: Delete docs/program, docs/architecture and tools/program; nothing else was changed.
-- Not touched: Existing source, docs and the fork's main.
-- Evidence: `docs/program/PLAN.md`; `docs/program/TODO.md`; `docs/program/DUET-WORK-ORDER.md`; `tools/program/ledger.py validate: ok`
-
-## Round 9 — The architecture map exists as two models and a hand-drawn preview; Archify did not run (2026-11-20 23:58Z)
-
-- **Change.** base.json is the system as found and head.json is the target, both in Archify's architecture format with stable ids. The Archify command was blocked in this session, so the Before, Delta and After page was drawn from the same two files by a throwaway script and looked at once in a headless browser in dark and light. It has no validate, deliver, check or browser-check receipt.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade C (Claude Code (web); one visual look; no automated gates).
-- Closes on: M0-15: Archify finalize and compare on the Mac, preview deleted.
-- Evidence: `docs/architecture/glasses-assistant/head.json`; `docs/architecture/glasses-assistant/base.json`; `docs/architecture/glasses-assistant/glasses-assistant.preview.html`
-
-## Round 10 — The intended cross-checking pass did not run, so web claims rest on one researcher each (2026-11-20 23:58Z)
-
-- **Note.** The multi-agent workflow and one research agent were blocked by this session's permission classifier. Five single-researcher passes ran instead and I read upstream, Archify and the cited code lines myself. Anything marked web in the plan is a lead to confirm at the task that depends on it.
-- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator. Grade C (Claude Code (web); process note).
-- Evidence: `docs/program/PLAN.md section 11`
-
-## Round 11 — Eight questions and four setup steps are waiting on the operator (2026-11-20 23:58Z)
-
-- **Gate.** The questions do not block the reach probe or the fabric probe. The setup steps are approvals or actions only the operator can take and they gate the first signed build.
-- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Owner: operator.
+- **Incident.** The first version of this package named a machine on the private network, local paths and the location of a key file. It held no key, token or address. The package was rewritten without them and the details moved to a private notes file handed to the operator. A push that would have replaced the branch history was refused by the session's permission rules, so the first commit on this branch still holds the old text and can be read from the pull request's commit list.
+- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Reached: executed. Owner: operator. Grade A (Claude Code (web); scanned the files myself; the history rewrite was not done).
+- Rollback: none needed; the removed text is in the operator's private notes.
+- Closes on: the first commit is no longer reachable from any branch or pull request.
+- Not touched: main, every other branch, and the branch history.
 - Open and human-held:
-  - O-2: confirm NVIDIA Cutter means the two-node DGX Spark cluster
-  - O-4: app name, bundle id and wake phrases
-  - O-5: which glasses, which iPhone, which iOS
-  - O-6: which vault folder receives glasses notes
-  - O-7: how long photos are kept
-  - O-8: which vault repository is canonical
-  - M0-07: choose identifiers and create the App Store Connect record
-  - M0-08: register the app in Meta Wearables Developer Center
-  - M0-11: create the first Xcode Cloud workflow in Xcode and start the build
-  - M0-12: install from TestFlight and pair the glasses
-- Evidence: `docs/program/PLAN.md sections 5.1 and 9`
+  - 1. Approve replacing this branch's history with one clean commit (or delete the branch and pull request so it can be pushed fresh), and decide whether to ask GitHub Support to purge the old commit
+- Evidence: `a scan of every committed file for the removed names and paths found none`; `docs/program/README.md, rule 5`
+
+## Round 10 — The ledger tool passes its regression test (2026-11-21 01:05Z)
+
+- **Change.** Thirty-two checks cover sequencing, required fields, evidence for done, the operator-only accepted state, board and ledger agreement, item-level closing of operator items, resequencing after a two-writer merge, the credential backstop and a stale log.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); ran it myself).
+- Evidence: `bash tools/program/ledger_test.sh: 32 passed, 0 failed`
+
+## Round 11 — M0-16 queued → running: Render the architecture map with Archify, review it, retire the preview (2026-11-21 01:05Z)
+
+- **Task state · M0-16.** Rendering the map with Archify and running the visual review loop.
+- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Owner: operator.
+
+## Round 12 — Archify renders the target and as-found maps with every gate passing, and compares them (2026-11-21 01:05Z)
+
+- **Change · M0-16.** Archify 3.2.0, showcase profile, signal-flow preset. Both pages pass validate, deliver, check and browser-check with no advisory. The as-found model pins the fork at 73c5318 and its source citations were checked by the tool. The comparison reports 10 components added, 2 changed and 1 removed; 15 relationships added, 2 changed and 1 removed; 1 boundary added and 3 changed. The renders were made in a scratch directory and copied in; the hashes in the receipts identify the files.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); ran the tool and read its receipts).
+- Evidence: `docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json`; `docs/architecture/glasses-assistant/glasses-assistant.base.finalize-summary.json`; `docs/architecture/glasses-assistant/glasses-assistant.delta.receipt.json`; `docs/architecture/glasses-assistant/review/pages.sha256.json`; `docs/architecture/glasses-assistant/review/target.png`
+
+## Round 13 — The first review found a blocking defect that every gate had passed (2026-11-21 01:05Z)
+
+- **Note · M0-16.** Three read-only reviewers found 47 issues in round 1; all three reported that eight planned components looked live, because the renderer hides status tags at default zoom. The models were rewritten and re-rendered, and what is committed here is that second version. A second review round is running on it; its result is the next line about this task.
+- Lane `claude-code-web`, by Claude Code (web). State: **partial**. Reached: executed. Owner: operator. Grade B (Claude Code (web); independent reviewers looked at captures; the author fixed and re-rendered).
+- Closes on: round 2 reports no confirmed blocking finding.
+- Evidence: `docs/architecture/glasses-assistant/review/round-1.md`
 
 ## Open and human-held, all rounds
 
-Every item an agent raised for the operator and nobody has closed, oldest first. An item leaves this
-list when a later line names its round in `--resolves`, or corrects it with `--supersedes`.
+Every item an agent raised for the operator and nobody has closed, oldest first. Close one with
+`--resolves ROUND:ITEM` on the line that records its outcome. A correction does not close items.
 
-- (round 4) Ratify or amend D-01 to D-10 (M0-01)
-- (round 5) O-1: is the Mac 256 GB or 512 GB, or are there two Macs
-- (round 5) O-3: confirm the m3u install with LiteLLM on :4000 is the live fabric
-- (round 11) O-2: confirm NVIDIA Cutter means the two-node DGX Spark cluster
-- (round 11) O-4: app name, bundle id and wake phrases
-- (round 11) O-5: which glasses, which iPhone, which iOS
-- (round 11) O-6: which vault folder receives glasses notes
-- (round 11) O-7: how long photos are kept
-- (round 11) O-8: which vault repository is canonical
-- (round 11) M0-07: choose identifiers and create the App Store Connect record
-- (round 11) M0-08: register the app in Meta Wearables Developer Center
-- (round 11) M0-11: create the first Xcode Cloud workflow in Xcode and start the build
-- (round 11) M0-12: install from TestFlight and pair the glasses
+- (round 6 item 1) Ratify or amend D-01 to D-12 (task M0-01)
+- (round 7 item 1) O-1: the request said the Mac has 512 GB; the log and the operator's map say 256 GB. Which, or are there two Macs?
+- (round 7 item 2) O-2: confirm 'NVIDIA Cutter' means the two-node DGX Spark cluster
+- (round 7 item 3) O-3: confirm the fabric in the log is the live one, and say where Unsloth Studio runs
+- (round 7 item 4) O-4: app name, bundle id and wake phrase
+- (round 7 item 5) O-5: which glasses, which iPhone, which iOS version
+- (round 7 item 6) O-6: which Obsidian vault is live and which folder receives glasses notes
+- (round 7 item 7) O-7: how long photos are kept on the Mac
+- (round 7 item 8) O-8: which frontier accounts have keys, which OpenAI model, and the daily spend cap
+- (round 7 item 9) O-9: private repository (the default) or this public fork for the working code
+- (round 7 item 10) O-10: how an agent reaches the Mac
+- (round 9 item 1) Approve replacing this branch's history with one clean commit (or delete the branch and pull request so it can be pushed fresh), and decide whether to ask GitHub Support to purge the old commit

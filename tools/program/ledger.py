@@ -9,13 +9,18 @@ from it or kept in step with it:
   docs/program/TODO.md            task board; `task` edits one line and logs it
 
 Commands:
-  append    add one ledger line (validated, sequenced, locked)
-  task      change a task's state in TODO.md and log the change
-  validate  check the whole ledger and the task board
-  render    regenerate EXECUTION-LOG.md from the ledger
-  status    print task counts and the last ledger line
+  append       add one ledger line (validated, sequenced, locked)
+  task         change a task's state in TODO.md and log the change
+  validate     check the ledger, the board, and that they agree
+  render       regenerate EXECUTION-LOG.md from the ledger
+  status       print task counts and the last ledger line
+  resequence   repair sequence numbers after two clones appended in parallel
 
 Standard library only. Runs on Python 3.9+.
+
+This tool keeps the record consistent. It cannot prove who is typing: a lane
+name and an approval quote are statements by the writer, and the record is
+only as honest as they are.
 """
 
 import argparse
@@ -42,6 +47,7 @@ TODO_MD = os.path.join(PROGRAM_DIR, "TODO.md")
 KINDS = ("decision", "change", "probe", "task_state", "gate", "incident", "correction", "note")
 STATES = ("verified", "partial", "proposed", "blocked", "accepted", "failed")
 GRADES = ("A", "B", "C")
+REACHED = ("configured", "loaded", "executed", "verified")
 TASK_STATES = ("queued", "running", "blocked", "done", "accepted", "dropped")
 CHECKED_STATES = ("done", "accepted")
 
@@ -50,9 +56,13 @@ REQUIRED = ("schema", "seq", "ts", "work_id", "lane", "who", "kind", "title", "r
 TASK_LINE = re.compile(
     r"^- \[(?P<box>[ xX])\] \*\*(?P<id>[A-Z][A-Z0-9]*-[0-9]{2}[a-z]?)\*\* (?P<body>.*?)(?P<state> · state:(?P<st>[a-z]+))\s*$"
 )
+# Credential shapes. Each must start at a token boundary so that ordinary
+# words and file names ("task-m0-04-...") do not trip it.
 SECRETISH = re.compile(
-    r"(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|xox[abp]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.)"
+    r"(?<![A-Za-z0-9])(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|xox[abp]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}"
+    r"|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.)|-----BEGIN [A-Z ]*PRIVATE KEY-----"
 )
+RESOLVE_REF = re.compile(r"^(\d+)(?::(\d+))?$")
 
 
 class LedgerError(Exception):
@@ -63,7 +73,7 @@ def now_utc():
     return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def read_ledger(path=None):
+def read_ledger(path=None, tolerant=False):
     path = path or LEDGER
     rows = []
     if not os.path.exists(path):
@@ -71,12 +81,32 @@ def read_ledger(path=None):
     with open(path, "r", encoding="utf-8") as handle:
         for number, line in enumerate(handle, 1):
             if not line.strip():
+                if tolerant:
+                    continue
                 raise LedgerError("line %d is blank; the ledger has no blank lines" % number)
             try:
                 rows.append(json.loads(line))
             except ValueError as exc:
                 raise LedgerError("line %d is not JSON: %s" % (number, exc))
     return rows
+
+
+def write_ledger(rows, path=None):
+    path = path or LEDGER
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp, path)
+
+
+def parse_resolve(ref):
+    match = RESOLVE_REF.match(str(ref))
+    if not match:
+        raise LedgerError("--resolves takes SEQ or SEQ:ITEM, for example 11 or 11:3; got %r" % ref)
+    return int(match.group(1)), (int(match.group(2)) if match.group(2) else None)
 
 
 def check_row(row, expected_seq=None):
@@ -106,11 +136,18 @@ def check_row(row, expected_seq=None):
             problems.append("quality.grade must be one of %s" % ", ".join(GRADES))
         elif not quality.get("graded_by") or not quality.get("basis"):
             problems.append("quality needs graded_by and basis")
+    if row.get("reached") is not None and row["reached"] not in REACHED:
+        problems.append("reached must be one of %s" % ", ".join(REACHED))
     if row["kind"] == "correction" and not row.get("supersedes"):
         problems.append("a correction names the seq it supersedes")
-    if row["kind"] == "task_state" and not row.get("task"):
-        problems.append("a task_state line names its task")
-    if SECRETISH.search(json.dumps(row)):
+    if row["kind"] == "task_state":
+        if not row.get("task"):
+            problems.append("a task_state line names its task")
+        if row.get("task_to") not in TASK_STATES:
+            problems.append("a task_state line records task_to")
+        if (row.get("task_to") == "accepted" or row.get("task_from") == "accepted") and not row.get("approval"):
+            problems.append("moving a task into or out of accepted quotes the operator in approval")
+    if SECRETISH.search(json.dumps(row, ensure_ascii=False)):
         problems.append("looks like a credential value; the ledger records names and locations only")
     for key in ("title", "rationale"):
         if not str(row.get(key, "")).strip():
@@ -118,28 +155,36 @@ def check_row(row, expected_seq=None):
     return problems
 
 
-def _locked_append(row_builder):
-    """Take the ledger lock, read the tail, build the row, append, read back."""
-    os.makedirs(PROGRAM_DIR, exist_ok=True)
-    lock_path = LEDGER + ".lock"
-    with open(lock_path, "w") as lock:
+class _Lock(object):
+    """One writer at a time on this machine. Across machines, Git is the lock."""
+
+    def __enter__(self):
+        os.makedirs(PROGRAM_DIR, exist_ok=True)
+        self.handle = open(LEDGER + ".lock", "w")
         if fcntl is not None:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-        rows = read_ledger()
-        row = row_builder(len(rows) + 1, rows)
-        problems = check_row(row, expected_seq=len(rows) + 1)
-        if problems:
-            raise LedgerError("refusing to append: " + "; ".join(problems))
-        with open(LEDGER, "a", encoding="utf-8") as handle:
-            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=False) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        if read_ledger()[-1] != row:
-            raise LedgerError("read-back does not match the appended line")
-    return row
+            fcntl.flock(self.handle, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *exc):
+        self.handle.close()
+        return False
 
 
-def build_row(args, seq, rows, kind=None, title=None, task=None, state=None):
+def _append_locked(row):
+    """Append one checked row. Caller holds the lock."""
+    rows = read_ledger()
+    problems = check_row(row, expected_seq=len(rows) + 1)
+    if problems:
+        raise LedgerError("refusing to append: " + "; ".join(problems))
+    with open(LEDGER, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, ensure_ascii=False, sort_keys=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    if read_ledger()[-1] != row:
+        raise LedgerError("read-back does not match the appended line")
+
+
+def build_row(args, rows, kind=None, title=None, task=None, state=None, extra=None):
     stamp = args.ts or now_utc()
     clamped = False
     if args.ts:
@@ -155,7 +200,7 @@ def build_row(args, seq, rows, kind=None, title=None, task=None, state=None):
         stamp, clamped = str(rows[-1]["ts"]), True
     row = {
         "schema": SCHEMA,
-        "seq": seq,
+        "seq": len(rows) + 1,
         "ts": stamp,
         "work_id": WORK_ID,
         "lane": args.lane,
@@ -168,7 +213,10 @@ def build_row(args, seq, rows, kind=None, title=None, task=None, state=None):
         "owner": args.owner,
         "state": state or args.state,
     }
+    if extra:
+        row.update(extra)
     optional = {
+        "reached": args.reached,
         "approval": args.approval,
         "rollback": args.rollback,
         "closes_on": args.closes_on,
@@ -183,20 +231,27 @@ def build_row(args, seq, rows, kind=None, title=None, task=None, state=None):
         row["ts_clamped"] = True
     if args.human_held:
         row["human_held"] = list(args.human_held)
-    if args.resolves:
-        known = {r["seq"] for r in rows}
-        missing = [n for n in args.resolves if n not in known]
-        if missing:
-            raise LedgerError("resolves %s, not in the ledger" % ", ".join(str(n) for n in missing))
-        row["resolves"] = list(args.resolves)
     if args.followup:
         row["followups"] = list(args.followup)
     if args.grade:
         row["quality"] = {"grade": args.grade, "graded_by": args.graded_by or args.who, "basis": args.basis or ""}
-    if row.get("supersedes"):
-        known = {r["seq"] for r in rows}
-        if row["supersedes"] not in known:
-            raise LedgerError("supersedes %r, which is not in the ledger" % row["supersedes"])
+    by_seq = {r["seq"]: r for r in rows}
+    if row.get("supersedes") and row["supersedes"] not in by_seq:
+        raise LedgerError("supersedes %r, which is not in the ledger" % row["supersedes"])
+    if args.resolves:
+        refs = []
+        for ref in args.resolves:
+            seq, item = parse_resolve(ref)
+            target = by_seq.get(seq)
+            if target is None:
+                raise LedgerError("resolves round %d, which is not in the ledger" % seq)
+            held = target.get("human_held") or []
+            if not held:
+                raise LedgerError("round %d has no human-held items to resolve" % seq)
+            if item is not None and not 1 <= item <= len(held):
+                raise LedgerError("round %d has %d human-held items; there is no item %d" % (seq, len(held), item))
+            refs.append("%d:%d" % (seq, item) if item is not None else str(seq))
+        row["resolves"] = refs
     return row
 
 
@@ -235,13 +290,27 @@ def set_task_state(task_id, new_state):
     for index, line in enumerate(lines):
         match = TASK_LINE.match(line)
         if match and match.group("id") == task_id:
-            old_state = match.group("st")
             box = "x" if new_state in CHECKED_STATES else " "
             lines[index] = "- [%s] **%s** %s · state:%s" % (box, task_id, match.group("body"), new_state)
-            with open(TODO_MD, "w", encoding="utf-8") as handle:
+            tmp = TODO_MD + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as handle:
                 handle.write("\n".join(lines))
-            return old_state, match.group("body")
+            os.replace(tmp, TODO_MD)
+            return
     raise LedgerError("task %s is not on the board" % task_id)
+
+
+def closed_items(rows):
+    """Map (seq, item_index) -> seq of the line that resolved it."""
+    held = {row["seq"]: len(row.get("human_held") or []) for row in rows}
+    closed = {}
+    for row in rows:
+        for ref in row.get("resolves", []):
+            seq, item = parse_resolve(ref)
+            items = range(1, held.get(seq, 0) + 1) if item is None else [item]
+            for index in items:
+                closed.setdefault((seq, index), row["seq"])
+    return closed
 
 
 def _sentence(text):
@@ -257,15 +326,11 @@ def render(rows):
     out.append("append a ledger line and render again. No secrets are recorded here.")
     out.append("")
     superseded = {row["supersedes"]: row["seq"] for row in rows if row.get("supersedes")}
-    resolved = {}
-    for row in rows:
-        for target in row.get("resolves", []):
-            resolved[target] = row["seq"]
+    closed = closed_items(rows)
     open_items = []
     for row in rows:
         stamp = row["ts"].replace("T", " ")[:16] + "Z"
-        heading = "## Round %d — %s (%s)" % (row["seq"], " ".join(row["title"].split()).rstrip("."), stamp)
-        out.append(heading)
+        out.append("## Round %d — %s (%s)" % (row["seq"], " ".join(row["title"].split()).rstrip("."), stamp))
         out.append("")
         if row["seq"] in superseded:
             out.append("> Superseded by round %d. Kept for the record; read that round for the current finding." % superseded[row["seq"]])
@@ -273,8 +338,12 @@ def render(rows):
         if row.get("supersedes"):
             out.append("- **Correction to round %d.** %s" % (row["supersedes"], _sentence(row["rationale"])))
         else:
-            out.append("- **%s** %s" % (row["kind"].replace("_", " ").capitalize() + (" · " + row["task"] if row.get("task") else "") + ".", _sentence(row["rationale"])))
-        meta = "- Lane `%s`, by %s. State: **%s**. Owner: %s." % (row["lane"], row["who"], row["state"], row["owner"])
+            lead = row["kind"].replace("_", " ").capitalize() + (" · " + row["task"] if row.get("task") else "") + "."
+            out.append("- **%s** %s" % (lead, _sentence(row["rationale"])))
+        meta = "- Lane `%s`, by %s. State: **%s**." % (row["lane"], row["who"], row["state"])
+        if row.get("reached"):
+            meta += " Reached: %s." % row["reached"]
+        meta += " Owner: %s." % row["owner"]
         if row.get("quality"):
             meta += " Grade %s (%s; %s)." % (row["quality"]["grade"], row["quality"]["graded_by"], row["quality"]["basis"])
         out.append(meta)
@@ -291,25 +360,27 @@ def render(rows):
         if row.get("followups"):
             out.append("- Next: " + "; ".join(row["followups"]) + ".")
         if row.get("resolves"):
-            out.append("- Resolves the human-held items of round%s %s." % ("s" if len(row["resolves"]) > 1 else "", ", ".join(str(n) for n in row["resolves"])))
+            out.append("- Resolves: " + ", ".join("round %s" % ref.replace(":", " item ") for ref in row["resolves"]) + ".")
         if row.get("human_held"):
-            closed = resolved.get(row["seq"]) or superseded.get(row["seq"])
-            out.append("- Open and human-held%s:" % ((" (closed by round %d)" % closed) if closed else ""))
-            for item in row["human_held"]:
-                out.append("  - %s" % item)
-                if not closed:
-                    open_items.append((row["seq"], item))
+            out.append("- Open and human-held:")
+            for index, item in enumerate(row["human_held"], 1):
+                by = closed.get((row["seq"], index))
+                if by:
+                    out.append("  - %d. ~~%s~~ (closed by round %d)" % (index, item, by))
+                else:
+                    out.append("  - %d. %s" % (index, item))
+                    open_items.append((row["seq"], index, item))
         if row["evidence"]:
             out.append("- Evidence: " + "; ".join("`%s`" % item for item in row["evidence"]))
         out.append("")
     out.append("## Open and human-held, all rounds")
     out.append("")
     if open_items:
-        out.append("Every item an agent raised for the operator and nobody has closed, oldest first. An item leaves this")
-        out.append("list when a later line names its round in `--resolves`, or corrects it with `--supersedes`.")
+        out.append("Every item an agent raised for the operator and nobody has closed, oldest first. Close one with")
+        out.append("`--resolves ROUND:ITEM` on the line that records its outcome. A correction does not close items.")
         out.append("")
-        for seq, item in open_items:
-            out.append("- (round %d) %s" % (seq, item))
+        for seq, index, item in open_items:
+            out.append("- (round %d item %d) %s" % (seq, index, item))
     else:
         out.append("None recorded.")
     out.append("")
@@ -317,7 +388,14 @@ def render(rows):
 
 
 def cmd_append(args):
-    row = _locked_append(lambda seq, rows: build_row(args, seq, rows))
+    if args.kind == "task_state":
+        raise LedgerError("task_state lines are written by the `task` command, which also updates the board")
+    with _Lock():
+        rows = read_ledger()
+        if args.task and args.task not in {t["id"] for t in read_tasks()}:
+            raise LedgerError("task %s is not on the board" % args.task)
+        row = build_row(args, rows)
+        _append_locked(row)
     print("appended seq %d: %s" % (row["seq"], row["title"]))
     return 0
 
@@ -325,35 +403,31 @@ def cmd_append(args):
 def cmd_task(args):
     if args.to not in TASK_STATES:
         raise LedgerError("state %r is not one of %s" % (args.to, ", ".join(TASK_STATES)))
-    if args.to == "accepted" and args.lane != "operator" and not args.approval:
-        raise LedgerError("accepted is the operator's state: pass --lane operator, or quote the operator's words in --approval")
     if args.to == "done" and not args.evidence:
         raise LedgerError("done needs --evidence: a probe, a build result or a commit")
-    before = read_tasks()
-    current = [t for t in before if t["id"] == args.id]
-    if not current:
-        raise LedgerError("task %s is not on the board" % args.id)
-    old_state = current[0]["state"]
-    body = current[0]["body"]
-    ledger_state = {"done": "verified", "accepted": "accepted", "blocked": "blocked", "dropped": "partial"}.get(args.to, "partial")
-    title = "%s %s → %s: %s" % (args.id, old_state, args.to, re.sub(r" · .*$", "", body).strip())
-
-    def builder(seq, rows):
-        return build_row(args, seq, rows, kind="task_state", title=title, task=args.id, state=ledger_state)
-
-    row = _locked_append(builder)
-    set_task_state(args.id, args.to)
+    with _Lock():
+        current = [t for t in read_tasks() if t["id"] == args.id]
+        if not current:
+            raise LedgerError("task %s is not on the board" % args.id)
+        old_state, body = current[0]["state"], current[0]["body"]
+        if old_state == args.to:
+            raise LedgerError("task %s is already %s" % (args.id, args.to))
+        if (args.to == "accepted" or old_state == "accepted") and not args.approval:
+            raise LedgerError("accepted is the operator's state: quote the operator's words and time in --approval")
+        ledger_state = {"done": "verified", "accepted": "accepted", "blocked": "blocked"}.get(args.to, "partial")
+        title = "%s %s → %s: %s" % (args.id, old_state, args.to, re.sub(r" · .*$", "", body).strip())
+        rows = read_ledger()
+        row = build_row(args, rows, kind="task_state", title=title, task=args.id, state=ledger_state,
+                        extra={"task_from": old_state, "task_to": args.to})
+        _append_locked(row)
+        set_task_state(args.id, args.to)
     print("task %s: %s -> %s (ledger seq %d)" % (args.id, old_state, args.to, row["seq"]))
     return 0
 
 
-def cmd_validate(args):
+def find_problems():
     problems = []
-    try:
-        rows = read_ledger()
-    except LedgerError as exc:
-        print("FAIL ledger: %s" % exc)
-        return 1
+    rows = read_ledger()
     for index, row in enumerate(rows, 1):
         for problem in check_row(row, expected_seq=index):
             problems.append("ledger seq %d: %s" % (index, problem))
@@ -364,27 +438,53 @@ def cmd_validate(args):
         previous = str(row.get("ts", ""))
     tasks = read_tasks()
     problems.extend(check_tasks(tasks))
-    task_ids = {task["id"] for task in tasks}
+    board = {task["id"]: task["state"] for task in tasks}
+    last = {}
     for row in rows:
-        if row.get("task") and task_ids and row["task"] not in task_ids:
+        if row.get("task") and board and row["task"] not in board:
             problems.append("ledger seq %s: task %s is not on the board" % (row.get("seq"), row["task"]))
+        if row.get("kind") == "task_state":
+            last[row.get("task")] = row.get("task_to")
+    for task_id, state in board.items():
+        expected = last.get(task_id, "queued")
+        if state != expected:
+            problems.append("task %s is %s on the board but the ledger says %s; change states with `ledger.py task`" % (task_id, state, expected))
+    by_seq = {row.get("seq"): row for row in rows}
+    for row in rows:
+        for ref in row.get("resolves", []):
+            try:
+                seq, item = parse_resolve(ref)
+            except LedgerError as exc:
+                problems.append("ledger seq %s: %s" % (row.get("seq"), exc))
+                continue
+            held = (by_seq.get(seq) or {}).get("human_held") or []
+            if not held or (item is not None and not 1 <= item <= len(held)):
+                problems.append("ledger seq %s: resolves %s, which does not exist" % (row.get("seq"), ref))
     if os.path.exists(LOG_MD) and rows:
         with open(LOG_MD, "r", encoding="utf-8") as handle:
             if handle.read() != render(rows):
                 problems.append("EXECUTION-LOG.md is stale; run `ledger.py render`")
+    return problems, len(rows), len(tasks)
+
+
+def cmd_validate(args):
+    try:
+        problems, n_rows, n_tasks = find_problems()
+    except LedgerError as exc:
+        print("FAIL ledger: %s" % exc)
+        return 1
     if problems:
         for problem in problems:
             print("FAIL %s" % problem)
         return 1
-    print("ok: %d ledger lines, %d tasks" % (len(rows), len(tasks)))
+    print("ok: %d ledger lines, %d tasks" % (n_rows, n_tasks))
     return 0
 
 
 def cmd_render(args):
     rows = read_ledger()
-    text = render(rows)
     with open(LOG_MD, "w", encoding="utf-8") as handle:
-        handle.write(text)
+        handle.write(render(rows))
     print("rendered %d rounds to %s" % (len(rows), os.path.relpath(LOG_MD, REPO_ROOT)))
     return 0
 
@@ -402,8 +502,64 @@ def cmd_status(args):
     if rows:
         last = rows[-1]
         print("ledger: %d lines; last seq %d at %s by %s — %s" % (len(rows), last["seq"], last["ts"], last["who"], last["title"]))
+        closed = closed_items(rows)
+        still = sum(1 for row in rows for index in range(1, len(row.get("human_held") or []) + 1) if (row["seq"], index) not in closed)
+        print("open human-held items: %d" % still)
     else:
         print("ledger: empty")
+    return 0
+
+
+def cmd_resequence(args):
+    """After a Git merge where two clones both appended, the file has duplicate
+    or out-of-order seq values. Keep every line, order by time, renumber, and
+    carry references across. Run it once, on one machine, then render."""
+    with _Lock():
+        rows = read_ledger(tolerant=True)
+        indexed = list(enumerate(rows))
+        indexed.sort(key=lambda pair: (str(pair[1].get("ts", "")), pair[1].get("seq", 0), pair[0]))
+        old_counts = {}
+        for _, row in indexed:
+            old_counts[row.get("seq")] = old_counts.get(row.get("seq"), 0) + 1
+        mapping, ambiguous = {}, set()
+        for new_seq, (_, row) in enumerate(indexed, 1):
+            old = row.get("seq")
+            if old_counts[old] > 1:
+                ambiguous.add(old)
+            else:
+                mapping[old] = new_seq
+        warnings, changed, out = [], 0, []
+        for new_seq, (_, row) in enumerate(indexed, 1):
+            row = dict(row)
+            if row.get("seq") != new_seq:
+                changed += 1
+            row["seq"] = new_seq
+            if row.get("supersedes") is not None:
+                old = row["supersedes"]
+                if old in ambiguous:
+                    warnings.append("new seq %d supersedes old seq %s, which two lines shared; fix by hand" % (new_seq, old))
+                else:
+                    row["supersedes"] = mapping.get(old, old)
+            if row.get("resolves"):
+                refs = []
+                for ref in row["resolves"]:
+                    seq, item = parse_resolve(ref)
+                    if seq in ambiguous:
+                        warnings.append("new seq %d resolves old round %s, which two lines shared; fix by hand" % (new_seq, seq))
+                        refs.append(ref)
+                    else:
+                        target = mapping.get(seq, seq)
+                        refs.append("%d:%d" % (target, item) if item is not None else str(target))
+                row["resolves"] = refs
+            out.append(row)
+        print("%d lines; %d renumbered; %d references need a hand fix" % (len(out), changed, len(warnings)))
+        for warning in warnings:
+            print("WARN %s" % warning)
+        if args.dry_run:
+            print("dry run: nothing written")
+            return 0
+        write_ledger(out)
+    print("written. Now run `ledger.py render` and `ledger.py validate`.")
     return 0
 
 
@@ -412,6 +568,7 @@ def add_common(parser):
     parser.add_argument("--who", required=True, help="agent or person, e.g. 'Claude Duet (duet)'")
     parser.add_argument("--rationale", required=True, help="what was found or decided, and why")
     parser.add_argument("--evidence", action="append", help="repeatable: path:line, commit, URL, build id, trace id")
+    parser.add_argument("--reached", choices=REACHED, help="how far the thing got: configured, loaded, executed or verified")
     parser.add_argument("--owner", default="operator", help="who owns the outcome (default operator)")
     parser.add_argument("--approval", help="the operator's words and UTC time, when the action needed them")
     parser.add_argument("--rollback", help="how to undo it")
@@ -421,7 +578,7 @@ def add_common(parser):
     parser.add_argument("--followup", action="append", help="repeatable: next action")
     parser.add_argument("--commit", help="commit sha in this repository")
     parser.add_argument("--supersedes", type=int, help="seq this line corrects")
-    parser.add_argument("--resolves", type=int, action="append", help="repeatable: seq whose human-held items this line closes")
+    parser.add_argument("--resolves", action="append", help="repeatable: SEQ:ITEM closes one human-held item of that round; SEQ closes all of them")
     parser.add_argument("--grade", choices=GRADES, help="quality grade of the evidence")
     parser.add_argument("--graded-by", dest="graded_by")
     parser.add_argument("--basis", help="why that grade")
@@ -446,7 +603,11 @@ def main(argv=None):
     p_task.add_argument("--to", required=True, help="|".join(TASK_STATES))
     p_task.set_defaults(func=cmd_task)
 
-    for name, func, text in (("validate", cmd_validate, "check ledger and board"), ("render", cmd_render, "regenerate EXECUTION-LOG.md"), ("status", cmd_status, "print a summary")):
+    p_reseq = sub.add_parser("resequence", help="repair seq values after a two-writer merge")
+    p_reseq.add_argument("--dry-run", action="store_true", help="report what would change and write nothing")
+    p_reseq.set_defaults(func=cmd_resequence)
+
+    for name, func, text in (("validate", cmd_validate, "check ledger, board and their agreement"), ("render", cmd_render, "regenerate EXECUTION-LOG.md"), ("status", cmd_status, "print a summary")):
         p = sub.add_parser(name, help=text)
         p.set_defaults(func=func)
 

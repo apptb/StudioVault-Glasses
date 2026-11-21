@@ -2,41 +2,278 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Glasses Assistant - As Found 2026-11-20",
+    "title": "Glasses Assistant - As Found",
     "output": "docs/architecture/glasses-assistant/glasses-assistant.base.html",
+    "subtitle": "As found on 2026-11-20. The phone app calls four vendor clouds directly and never reaches the models on the Mac or the DGX pair.",
     "visual_preset": "signal-flow",
-    "quality_profile": "showcase"
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/apptb/StudioVault-Glasses",
+      "provider": "github",
+      "revision": "73c53185fc2498419d082286806a4237c2d47726"
+    }
   },
   "components": [
-    { "id": "github", "type": "external", "label": "GitHub", "sublabel": "apptb/StudioVault-Glasses", "pos": [40, 40], "size": [150, 60] },
-    { "id": "glasses", "type": "external", "label": "Ray-Ban Meta", "sublabel": "camera · mic · speakers", "pos": [40, 410], "size": [150, 64] },
-    { "id": "app", "type": "frontend", "label": "Glasses app (iOS)", "sublabel": "Matcha fork · DAT SDK 0.4", "pos": [320, 410], "size": [170, 64] },
-    { "id": "cloud_voice", "type": "external", "label": "Cloud voice models", "sublabel": "Gemini Live · Azure Realtime", "pos": [640, 60], "size": [170, 64] },
-    { "id": "cloud_agents", "type": "external", "label": "Cloud agent backends", "sublabel": "E2B · Vercel · OpenClaw", "pos": [640, 150], "size": [170, 64] },
-    { "id": "litellm", "type": "cloud", "label": "LiteLLM :4000", "sublabel": "9 routes + fallbacks", "tag": "configured", "pos": [940, 270], "size": [160, 64] },
-    { "id": "mac_35b", "type": "backend", "label": "rapid-mlx 35B", "sublabel": "local.mac-fast · vision", "pos": [1200, 270], "size": [160, 64] },
-    { "id": "worker", "type": "backend", "label": "Daily synthesis worker", "sublabel": "brief + audio + archify", "pos": [1190, 550], "size": [180, 64] },
-    { "id": "vault", "type": "database", "label": "Obsidian vault", "sublabel": "intake notes · daily brief", "pos": [1200, 690], "size": [160, 64] },
-    { "id": "dgx_glm", "type": "backend", "label": "2x DGX Spark", "sublabel": "GLM-5.3-Flash · vision", "pos": [945, 60], "size": [150, 64] }
+    {
+      "id": "github",
+      "type": "external",
+      "label": "GitHub",
+      "sublabel": "apptb/StudioVault-Glasses",
+      "tag": "live",
+      "pos": [
+        40,
+        36
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "glasses",
+      "type": "external",
+      "label": "Ray-Ban Meta",
+      "sublabel": "camera · mic · speakers",
+      "tag": "configured",
+      "pos": [
+        40,
+        224
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Glasses app (iOS)",
+      "sublabel": "Matcha fork · DAT SDK 0.4",
+      "tag": "configured",
+      "sources": [
+        {
+          "path": "samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj",
+          "line": 976,
+          "end_line": 983,
+          "label": "DAT SDK pin 0.4.0"
+        }
+      ],
+      "pos": [
+        310,
+        224
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "vendor_clouds",
+      "type": "external",
+      "label": "Vendor clouds",
+      "sublabel": "Gemini, Azure, E2B, Vercel",
+      "tag": "configured",
+      "sources": [
+        {
+          "path": "samples/CameraAccess/CameraAccess/Gemini/GeminiConfig.swift",
+          "line": 4,
+          "label": "Gemini Live endpoint"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Azure/AzureRealtimeConfig.swift",
+          "line": 104,
+          "label": "Azure realtime endpoint"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Agent/AgentConfig.swift",
+          "line": 3,
+          "end_line": 12,
+          "label": "Agent backend on Vercel"
+        }
+      ],
+      "pos": [
+        534,
+        36
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "litellm",
+      "type": "backend",
+      "label": "LiteLLM router",
+      "sublabel": "local routes · per log",
+      "tag": "configured",
+      "pos": [
+        920,
+        484
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "localmodels",
+      "type": "backend",
+      "label": "Local models",
+      "sublabel": "rapid-mlx · oMLX · proxies",
+      "tag": "configured",
+      "pos": [
+        1190,
+        484
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "vault",
+      "type": "database",
+      "label": "Obsidian vault",
+      "sublabel": "intake notes · daily brief",
+      "tag": "configured",
+      "pos": [
+        640,
+        624
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Daily synthesis worker",
+      "sublabel": "brief + audio + archify",
+      "tag": "configured",
+      "pos": [
+        920,
+        624
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "dgx_glm",
+      "type": "backend",
+      "label": "GLM server",
+      "sublabel": "GLM-5.3 · vision untested",
+      "tag": "configured",
+      "pos": [
+        1190,
+        222
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
   ],
   "boundaries": [
-    { "kind": "region", "label": "iPhone (never built from this fork)", "wraps": ["app"], "pad": 20 },
-    { "kind": "region", "label": "Mac Studio (launchd, tailnet only)", "wraps": ["litellm", "mac_35b", "worker", "vault"], "pad": 20 },
-    { "kind": "region", "label": "2x DGX Spark cluster", "wraps": ["dgx_glm"], "pad": 14 }
+    {
+      "kind": "region",
+      "label": "iPhone",
+      "wraps": [
+        "app"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Mac Studio",
+      "wraps": [
+        "litellm",
+        "localmodels",
+        "vault",
+        "worker"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "2x DGX Spark cluster",
+      "wraps": [
+        "dgx_glm"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Public internet",
+      "wraps": [
+        "vendor_clouds"
+      ],
+      "pad": 14
+    }
   ],
   "connections": [
-    { "id": "glasses-app", "from": "glasses", "to": "app", "label": "DAT · HFP" },
-    { "id": "app-cloud-voice", "from": "app", "to": "cloud_voice", "label": "audio + 1 fps video", "variant": "security", "route": "orthogonal-h" },
-    { "id": "app-cloud-agents", "from": "app", "to": "cloud_agents", "label": "execute(task)", "variant": "security", "route": "orthogonal-h" },
-    { "id": "litellm-35b", "from": "litellm", "to": "mac_35b", "label": "mac-fast", "variant": "emphasis" },
-    { "id": "litellm-dgx", "from": "litellm", "to": "dgx_glm", "label": "glm-chat" },
-    { "id": "worker-vault", "from": "worker", "to": "vault", "label": "daily brief" }
+    {
+      "id": "glasses-app",
+      "from": "glasses",
+      "to": "app",
+      "label": "DAT · HFP in/out",
+      "variant": "emphasis",
+      "labelDx": -11
+    },
+    {
+      "id": "app-vendors",
+      "from": "app",
+      "to": "vendor_clouds",
+      "label": "voice, video and tasks",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "labelAt": [
+        553,
+        158
+      ]
+    },
+    {
+      "id": "litellm-local",
+      "from": "litellm",
+      "to": "localmodels",
+      "label": "local routes"
+    },
+    {
+      "id": "litellm-dgx",
+      "from": "litellm",
+      "to": "dgx_glm",
+      "label": "glm routes",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "worker-vault",
+      "from": "worker",
+      "to": "vault",
+      "label": "daily brief"
+    }
   ],
   "cards": [
-    { "dot": "rose", "title": "What is missing", "items": [
-      "No path from the phone to the local fabric: LiteLLM listens on 127.0.0.1 only",
-      "No wake phrase, no single-shot photo question, no local task lane",
-      "Every model and agent call in the fork goes to a vendor cloud"
-    ] }
+    {
+      "dot": "rose",
+      "title": "What is missing",
+      "items": [
+        "No path from the phone to the Mac: the model router accepts local connections only",
+        "No hands-free trigger, no single photo question, no task lane on the Mac",
+        "The phone app holds vendor keys and calls four vendor clouds directly"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Where this comes from",
+      "items": [
+        "The app and its vendors were read from the fork at commit 73c5318: the SDK pin in project.pbxproj line 981, the endpoints in GeminiConfig.swift, AzureRealtimeConfig.swift and AgentConfig.swift",
+        "Everything on the Mac and the DGX pair is from the operator's execution log of 2026-11-20. Tagged configured: set up per the log, not probed",
+        "Image input on the DGX model is claimed in the log and has not been tested"
+      ]
+    }
   ]
 }

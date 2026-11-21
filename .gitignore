@@ -20,3 +20,6 @@ docs/.vscode/
 
 # Program ledger lock file (tools/program/ledger.py)
 docs/program/*.lock
+
+# Python bytecode from the program tools
+tools/program/__pycache__/

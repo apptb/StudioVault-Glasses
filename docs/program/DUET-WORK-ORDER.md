@@ -1,6 +1,6 @@
 # Work order for Duet: GLASSES-1, milestone M0
 
-Paste everything below the line into Duet. If Duet cannot read the repository, attach `PLAN.md`, `TODO.md`, `RESOURCES.md` and `LEDGER.jsonl` from `docs/program/` with it.
+Paste everything below the line into Duet. If Duet cannot read the repository, attach `README.md`, `PLAN.md`, `TODO.md`, `RESOURCES.md` and `LEDGER.jsonl` from `docs/program/`. Attach your private fabric notes too; they are not in the repository because it is public.
 
 ---
 
@@ -8,65 +8,76 @@ You are picking up a build program called GLASSES-1 as lane `duet`. I am the ope
 
 ## What this is
 
-I want a hands-free assistant on my Ray-Ban Meta glasses. I say a wake phrase, the glasses take a photo, I ask a question, and the answer comes back in my ear from models running on my own Mac Studio and DGX Spark pair. When the question is a job (check a price, save a note, set a reminder, do something on my Mac), the Mac does it and leaves a record in my Obsidian vault. The iPhone app is built and signed by Xcode Cloud and reaches me through TestFlight.
+I want a hands-free assistant on my Ray-Ban Meta glasses. A trigger starts a turn, the glasses take a photo, I ask a question, and the answer comes back in my ear. When the question is a job (check a price, save a note, set a reminder, do something on my Mac), my Mac does it and leaves a record in my Obsidian vault. The iPhone app is built and signed by Xcode Cloud and reaches me through TestFlight.
 
-A plan already exists. It was written in a cloud session that could read code, my execution log and the web, and could not touch any of my machines. So the plan is a set of well-sourced claims, not verified facts. Your first job is to find out which claims hold.
+Models come in two phases. First the frontier APIs (Claude, the DeepSeek platform, OpenAI), so we know what good looks like. Then the same turns on my own machines (Unsloth Studio and the deepseek-recipe proxies on the Mac, a large model on my DGX pair), which become the default once they match the frontier results on a fixed set of photo questions.
+
+A plan already exists. It was written in cloud sessions that could read code, my execution log and the web, and could not touch my machines. So it is a set of sourced claims, not verified facts. Your first job is to find out which claims hold.
 
 ## Read first
 
 In `apptb/StudioVault-Glasses`, branch `claude/rayban-meta-glasses-assistant-cb0gqs`, folder `docs/program/`:
 
-1. `PLAN.md`: requirements, what exists, ten proposed decisions (D-01 to D-10), the target architecture, acceptance for every task, risks, and eight questions for me (O-1 to O-8).
-2. `TODO.md`: the task board. Task ids below refer to it.
-3. `RESOURCES.md`: repositories, SDK facts, Apple and Meta requirements, what my log says about the fabric.
-4. `README.md`: how the ledger, the board and the rendered log are kept in step.
+1. `README.md`: how the record is kept. Read this before you change anything.
+2. `PLAN.md`: requirements, what exists, twelve proposed decisions (D-01 to D-12), the target architecture, acceptance for every task, risks, and ten questions for me (O-1 to O-10).
+3. `TODO.md`: the task board. Task ids below refer to it.
+4. `RESOURCES.md`: repositories, models, the agent harnesses on my Mac, Meta and Apple requirements.
 
-The architecture map is in `docs/architecture/glasses-assistant/`.
+The architecture map is in `docs/architecture/glasses-assistant/`. Open `glasses-assistant.delta.html` in a browser for the before, delta and after views.
+
+That repository is public. Never commit a host name, a local path, a port of one of my private services, or where a key lives. Those are in my private notes.
 
 ## What I want from this work order
 
-Milestone M0: ground truth and a signed build. No feature code. It ends when the upstream app, renamed and re-signed as mine, installs from TestFlight, pairs with my glasses, and the fabric has answered an image question through the gateway route. Tasks M0-01 to M0-15, with acceptance in section 6 of the plan.
+Milestone M0: ground truth and a signed build. No feature code. It ends when the upstream app, renamed and re-signed as mine, installs from TestFlight and pairs with my glasses, and two probes have each answered an image question: one through my local routes, one through the frontier APIs.
 
-Work in this order. Each step says who can do it, because you may not have the reach for all of them.
+Work in this order. Each step says what it needs, because you may not have the reach for all of them.
 
-**A1. Find out what you can reach (M0-03).** Before anything else, establish what this lane can actually do today: read and write this repository, run a shell on the Mac Studio, reach my gateway connector, read the vault. My log lists "Claude Duet endpoints" as something I have not set up on the new Mac, so expect the Mac to be out of reach and say so plainly if it is. A lane that is absent is a finding to record, not a reason to stop.
+**A1. Find out what you can reach (M0-03).** Can you read and write the repository? Can you run a command on my Mac Studio by any route you have? The test for the Mac is simple: run `hostname` there and read the answer back. My own notes say I have not set up a route from you to the new Mac, so expect that to fail and say so plainly. A lane that is absent is a finding to record.
 
-**A2. Bring me the decisions and questions as one short ballot (M0-01, M0-05).** Ten decisions with their defaults and eight questions. Put each in one or two plain sentences with the default first, so I can answer "yes to all, except..." without opening the plan. Do not wait for my answers to continue with steps that the plan's "undo" lines already cover.
+**A2. Bring me the decisions and questions as one short ballot (M0-01, M0-02).** Twelve decisions with their defaults and ten questions. Put each in one or two plain sentences with the default first, so I can answer "yes to all, except..." without opening the plan. Three decisions already carry my words from 2026-11-21 (D-01, D-04, D-09); show them as already given.
 
-**A3. Probe the fabric (M0-04).** This needs a shell on the Mac. If you have one, run it. If not, write the exact commands and expected results as a packet for Claude Code on the Mac and put the packet in the repository under `docs/program/packets/`. The probe must show an image going through LiteLLM on `:4000` and coming back described correctly, on both the Mac route and the DGX route, and one request that carries an image and a tool definition. I care most about this result: the whole design assumes it works and nobody has tried it.
+**A3. Write the probe packets (M0-04, M0-06).** Both probes need a shell on the Mac and a scoped model key that I provide; neither may print a key. If you have the shell, run them. If not, write each as a packet in `docs/program/packets/`: the exact commands, what each should return, and where the result file goes (`docs/program/reports/M0-04-fabric-probe.md`, `docs/program/reports/M0-06-frontier-probe.md`). A local Claude Code session or one of my headless harnesses will run them. The local probe must show an image going through my router and coming back described correctly, on a Mac route and on a DGX route, and one request that carries an image and a tool definition. The frontier probe sends the same photo and question through each frontier route and records time to first token, total time and cost. I care most about these two results: the design assumes they work and nobody has tried.
 
-**A4. Create the working branch (M0-06).** Branch `sovereign` from upstream `Intent-Lab/VisionClaw` at `3f39807`, with one commit on top that carries `docs/program`, `docs/architecture` and `tools/program` from the current branch. Do not touch `main`. This follows decision D-01; if I have rejected D-01 by then, skip it.
+**A4. Harvest Athena (M0-17).** Athena was my earlier voice project. It is dated; take intent and use cases from it and nothing else. Ask me for the notes if you cannot see them.
 
-**A5. Prepare the project to build from a fresh clone (M0-09).** On `sovereign`: identifiers (once I have chosen them in A2), the narrowed ignore rule from RESOURCES.md, the post-clone script from `docs/program/templates/`, and a cleared default gateway address in the example secrets file. `Package.resolved` has to be generated by Xcode on the Mac (M0-10); that part goes to Claude Code on the Mac if you cannot do it.
+**A5. Create the working line, once I have answered O-9 (M0-07).** O-9 asks whether the working code lives in a new private repository (the default) or in the public fork. Do not push upstream's code anywhere before I answer. When I have: import upstream `Intent-Lab/VisionClaw` at `3f39807`, add one commit carrying `docs/program`, `docs/architecture` and `tools/program`, and from then on keep the record only there. Do not commit to `main` of the fork.
 
-**A6. Walk me through the steps only I can take (M0-07, M0-08, M0-11, M0-12).** Section 5.1 of the plan lists them. Give them to me one screen at a time, in order, with what I should see when each one worked. When a build fails, read the failure with me and fix the repository side.
+**A6. Prepare the project to build from a fresh clone (M0-10).** On the working line: my identifiers (once I have chosen them), the narrowed ignore rule from RESOURCES.md, the post-clone script from `docs/program/templates/`, and a cleared default gateway address in the example secrets file. `Package.resolved` has to be generated by Xcode on the Mac (M0-11); write that as a packet if you cannot run it.
 
-**A7. Upgrade the SDK pin and render the map (M0-13, M0-15).** After the first green build, not before.
+**A7. Walk me through the steps only I can take (M0-05, M0-08, M0-09, M0-12, M0-13).** Section 5.1 of the plan lists the Apple and Meta steps; M0-05 is adding the frontier keys and routes. Give them to me one screen at a time, in order, with what I should see when each one worked. When a build fails, read the failure with me and fix the repository side.
 
-**A8. File the vault pointer (M0-02).** One note in the vault's Glasses project that points at this package by repository path, written under the vault's own rules. If the vault is out of reach from your lane, hand it to a lane that has it.
+**A8. Upgrade the SDK pin (M0-14).** After the first green build, not before.
+
+Steps A1 to A4 need nothing from me except the two keys in A3. Start them without waiting for the ballot.
 
 When M0 is done, stop and write the closeout. Do not start M1 without my word.
 
 ## What stays with me
 
-You prepare these and I do them or say yes each time: signing, device registration, anything written to App Store Connect or TestFlight, starting an Xcode Cloud build, the Meta Developer Center registration, exposing any service on Tailscale, changing LiteLLM's config or the daily worker, any TCC or Keychain prompt, and any push to `main`. Pushing to `sovereign` or to a task branch is yours.
+You prepare these and I do them or say yes each time: signing, device registration, anything written to App Store Connect or TestFlight, starting an Xcode Cloud build, the Meta Developer Center registration, adding an API key, exposing any service on my private network, changing my model router's configuration or my daily worker, any system permission or Keychain prompt, creating a repository, and any push to `main`. Pushing to the working line or to a task branch is yours.
 
 No agent reads, prints, stores or logs a credential value. If a credential prompt appears, stop and hand it to me. If you see a secret value anywhere, stop, tell me, and record that it happened without recording the value.
 
+I have authorized running DeepSeek Harness, Pi or OpenCode headless on my Mac for Mac-side tasks. Treat a headless job as running code: one job at a time, a fixed argument list, the task as a single argument.
+
 Nothing clinical or health-related goes through this app. Meta's terms forbid it and the plan rules it out.
+
+The old StudioVault vault repository is retired. Do not clone it, and do not follow rules or gateway names from it.
 
 ## How to keep the record
 
-The record is how I follow this work from my vault, and how the next lane picks it up, so it matters as much as the work.
+The record is how I follow this work from my vault, and how the next lane picks it up, so it matters as much as the work. `docs/program/README.md` has the commands and the rules. The ones that trip people up:
 
-- Change a task's state with `python3 tools/program/ledger.py task <ID> --to <state> ...`. Record findings, decisions, gates and corrections with `ledger.py append ...`. Then `ledger.py render` and `ledger.py validate` before each commit. `docs/program/README.md` has examples.
-- A task is `done` only with evidence someone could re-run: a command and its output, a build id, a commit, a trace id. Say which of configured, loaded, executed or verified you reached. `accepted` is mine to set.
-- When a probe contradicts the plan, the probe wins. Append a `correction` that supersedes the earlier line and update section 2 of the plan in the same commit.
-- Anything only I can do goes in `--human-held`, so it shows in the open list at the bottom of the log.
-- If you cannot run Python where you are, do not edit `LEDGER.jsonl` by hand. Put the lines you would have appended in your closeout under "Ledger lines to append" and hand them to a lane that can run the tool.
-- Pull before you append and push right after. Claude Code writes the same file.
+- Change a task's state only with `ledger.py task`. `validate` compares the board with the ledger and fails if they disagree.
+- A task is `done` only with evidence someone could re-run. Say how far it got with `--reached`. `accepted` is mine; it needs my words in `--approval`.
+- When a probe contradicts the plan, the probe wins: log it as a `probe` line and update section 2 of the plan in the same change.
+- Anything only I can do goes in `--human-held`. Close it later with `--resolves ROUND:ITEM`.
+- Commit the work first, then the record citing that commit.
+- If you cannot run Python where you are, do not edit `LEDGER.jsonl` by hand. Put the exact `ledger.py` commands you would have run in your closeout under "Ledger commands to run", and a lane that can run them will.
+- Pull before you append and push right after. If a merge leaves two lines with the same number, keep both and run `ledger.py resequence`.
 
-Any architecture picture you make follows the `visual-standard` skill in `apptb/studiovault-universal-skills`: an Archify model beside a finished page with its receipt. A Mermaid block is a draft.
+Any architecture picture you make follows my visual standard, the `visual-standard` skill in `apptb/studiovault-universal-skills` (on branch `claude/rayban-meta-glasses-assistant-cb0gqs` until its pull request merges). In short: the picture is rendered by Archify from a JSON model kept beside it, the tool's checks pass and their result file (the receipt) is kept too, and a change is shown as before, delta and after. A Mermaid block is a draft.
 
 ## When to stop and ask
 
@@ -80,10 +91,9 @@ Otherwise keep going. Reversible work on a branch does not need my permission.
 
 First reply: the reach report from A1 and the ballot from A2. Keep it short enough to read on a phone.
 
-At the end of M0, a closeout committed at `docs/program/closeouts/CLOSEOUT__<date>__M0.md` with three sections:
+At the end of M0, a closeout committed at `docs/program/closeouts/CLOSEOUT__<date>__M0.md` with four sections:
 
-- **Done**: each task with its commit, build id or trace.
+- **Done**: each task with its commit, build id or result file.
 - **Not finished**: each task with the exact gap, and which tasks were not started.
 - **Operator items**: what is waiting on me, most blocking first.
-
-Then one line per lane that worked on it: intent, what is verified, what is partial, what needs a decision, and the report path.
+- **Lanes**: one line for each lane that worked on M0, giving what it set out to do, what is verified, what is partial and what needs a decision.

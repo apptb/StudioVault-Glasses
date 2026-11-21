@@ -4,7 +4,7 @@
   "meta": {
     "title": "Glasses Assistant - As Found",
     "output": "docs/architecture/glasses-assistant/glasses-assistant.base.html",
-    "subtitle": "As found on 2026-11-20. The phone app calls four vendor clouds directly and never reaches the models on the Mac or the DGX pair.",
+    "subtitle": "As found on 2026-11-20. The phone app calls four vendor clouds directly. No path was found from it to the model router on the Mac or to the DGX pair.",
     "visual_preset": "signal-flow",
     "quality_profile": "showcase",
     "repository": {
@@ -37,7 +37,7 @@
       "tag": "configured",
       "pos": [
         40,
-        224
+        232
       ],
       "size": [
         150,
@@ -56,11 +56,23 @@
           "line": 976,
           "end_line": 983,
           "label": "DAT SDK pin 0.4.0"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Agent/AgentBridge.swift",
+          "line": 255,
+          "end_line": 279,
+          "label": "E2B sandbox request with access tokens"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Settings/SettingsManager.swift",
+          "line": 3,
+          "end_line": 7,
+          "label": "Agent backends"
         }
       ],
       "pos": [
         310,
-        224
+        232
       ],
       "size": [
         190,
@@ -85,10 +97,10 @@
           "label": "Azure realtime endpoint"
         },
         {
-          "path": "samples/CameraAccess/CameraAccess/Agent/AgentConfig.swift",
-          "line": 3,
-          "end_line": 12,
-          "label": "Agent backend on Vercel"
+          "path": "samples/CameraAccess/CameraAccess/Agent/AgentBridge.swift",
+          "line": 362,
+          "end_line": 366,
+          "label": "Vercel fallback call"
         }
       ],
       "pos": [
@@ -108,7 +120,7 @@
       "tag": "configured",
       "pos": [
         920,
-        484
+        492
       ],
       "size": [
         180,
@@ -123,7 +135,22 @@
       "tag": "configured",
       "pos": [
         1190,
-        484
+        492
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "unsloth",
+      "type": "backend",
+      "label": "Unsloth Studio",
+      "sublabel": "installed · host unknown",
+      "tag": "configured",
+      "pos": [
+        1190,
+        250
       ],
       "size": [
         170,
@@ -138,7 +165,7 @@
       "tag": "configured",
       "pos": [
         640,
-        624
+        632
       ],
       "size": [
         190,
@@ -153,7 +180,7 @@
       "tag": "configured",
       "pos": [
         920,
-        624
+        632
       ],
       "size": [
         180,
@@ -168,7 +195,7 @@
       "tag": "configured",
       "pos": [
         1190,
-        222
+        148
       ],
       "size": [
         170,
@@ -226,12 +253,12 @@
       "id": "app-vendors",
       "from": "app",
       "to": "vendor_clouds",
-      "label": "voice, video and tasks",
+      "label": "voice, video, tasks, access tokens",
       "variant": "security",
       "fromSide": "right",
       "toSide": "bottom",
       "labelAt": [
-        553,
+        519,
         158
       ]
     },
@@ -247,7 +274,8 @@
       "to": "dgx_glm",
       "label": "glm routes",
       "fromSide": "top",
-      "toSide": "left"
+      "toSide": "left",
+      "labelDy": 27
     },
     {
       "id": "worker-vault",
@@ -261,18 +289,31 @@
       "dot": "rose",
       "title": "What is missing",
       "items": [
-        "No path from the phone to the Mac: the model router accepts local connections only",
-        "No hands-free trigger, no single photo question, no task lane on the Mac",
-        "The phone app holds vendor keys and calls four vendor clouds directly"
+        "No path from the phone to the model router on the Mac: per the operator's log the router listens on a loopback port",
+        "No hands-free trigger, no single photo question, no task lane on the operator's Mac stack",
+        "The phone app holds vendor keys, calls four vendor clouds directly and, on its default E2B backend, sends the Google and Notion access tokens of linked accounts to the vendor sandbox with each task (read in code, not observed running)"
       ]
     },
     {
       "dot": "amber",
       "title": "Where this comes from",
       "items": [
-        "The app and its vendors were read from the fork at commit 73c5318: the SDK pin in project.pbxproj line 981, the endpoints in GeminiConfig.swift, AzureRealtimeConfig.swift and AgentConfig.swift",
-        "Everything on the Mac and the DGX pair is from the operator's execution log of 2026-11-20. Tagged configured: set up per the log, not probed",
+        "The app and its vendors were read from the fork at commit 73c5318: the SDK pin in project.pbxproj, the endpoints in GeminiConfig.swift and AzureRealtimeConfig.swift, the sandbox request, the tokens and the Vercel fallback in AgentBridge.swift",
+        "The fork also carries an OpenClaw backend aimed at a gateway on a Mac on the local network, and a StudioVaultMCP backend that is a stub. Whether OpenClaw was ever configured is not known; neither is drawn",
+        "On the Mac and the DGX pair, tagged configured means set up per the operator's log of 2026-11-20, not probed. The app and the vendor endpoints are tagged configured because they were read in source and not seen running",
+        "Unsloth Studio is installed per the operator; its machine and port are not recorded (open question O-3), so it is drawn outside the machine frames",
         "Image input on the DGX model is claimed in the log and has not been tested"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Reading the lines",
+      "items": [
+        "Teal, thick: the main path, glasses to the phone app",
+        "Pink (red in the light theme), dashed: leaves the private network. Here it carries the rest of the main path, from the app to the vendor clouds",
+        "Private network here means the operator's own devices: the phone, the Mac and the DGX pair. As found, no link from the phone to the other two is recorded, and how the Mac reaches the DGX pair is per the operator's log, not probed",
+        "Grey: links on the Mac and the DGX pair that the phone does not reach",
+        "Not drawn: what the platforms do on their own. Meta's assistant and its phone app carry the glasses link, the phone may sync through iCloud, and the vault follows whatever sync the operator already runs. None of this was checked"
       ]
     }
   ]

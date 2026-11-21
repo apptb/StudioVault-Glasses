@@ -6,24 +6,25 @@
   "comparatorVersion": 1,
   "canonicalVersion": 1,
   "completeness": "complete",
-  "proofLevel": "authored",
+  "proofLevel": "revision-pinned",
   "base": {
     "title": "Glasses Assistant - As Found",
-    "rawSha256": "909885c1692ade753301db39af74a75135991e00643b5bed39529a0dcab64a6a",
-    "semanticSha256": "9c8f12131be9240838b874c6ecee011cd3eacfdd5067d91bf72172d3488640cd",
-    "bytes": 6156,
+    "rawSha256": "afd5194b5cf8fe2783392a1e96f3f76c0bc11145d008a3e0b65823f50f5397bc",
+    "semanticSha256": "c538289874414ba684871036dac0c39e7c8e39dd99e37576e3b751718df42be7",
+    "bytes": 8468,
     "revision": "73c53185fc2498419d082286806a4237c2d47726"
   },
   "head": {
     "title": "Glasses Assistant - Target (planned)",
-    "rawSha256": "f0f534eead6ab079491a465ec4dd12bc56b786e8b4b3b2f42cd967cae785eecd",
-    "semanticSha256": "9172f0f8ea4395f424b1a7f97d0225a41ec85d64f364057eeafbb5d5315ecb86",
-    "bytes": 12054
+    "rawSha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+    "semanticSha256": "84e1e36e1814bb027f0a8ab8e0617d163ea8067c8ae49d4c9eba75dd30289997",
+    "bytes": 14538,
+    "revision": "73c53185fc2498419d082286806a4237c2d47726"
   },
   "summary": {
     "components": {
-      "added": 10,
-      "changed": 2,
+      "added": 9,
+      "changed": 5,
       "evidenceChanged": 0,
       "removed": 1,
       "moved": 0
@@ -41,7 +42,7 @@
       "geometryChanged": 0
     },
     "presentationChanged": true,
-    "provenanceChanged": true
+    "provenanceChanged": false
   },
   "changes": {
     "components": [
@@ -56,8 +57,7 @@
         ],
         "changedFields": [
           "/sources",
-          "/sublabel",
-          "/tag"
+          "/sublabel"
         ]
       },
       {
@@ -86,6 +86,18 @@
           "semantic"
         ],
         "changedFields": []
+      },
+      {
+        "id": "github",
+        "baseLabel": "GitHub",
+        "headLabel": "GitHub",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
       },
       {
         "id": "harness",
@@ -128,12 +140,15 @@
       },
       {
         "id": "unsloth",
+        "baseLabel": "Unsloth Studio",
         "headLabel": "Unsloth Studio",
-        "status": "added",
+        "status": "changed",
         "classifications": [
           "semantic"
         ],
-        "changedFields": []
+        "changedFields": [
+          "/sublabel"
+        ]
       },
       {
         "id": "vendor_clouds",
@@ -163,6 +178,18 @@
         "changedFields": []
       },
       {
+        "id": "worker",
+        "baseLabel": "Daily synthesis worker",
+        "headLabel": "Daily synthesis worker",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
+      },
+      {
         "id": "xcloud",
         "headLabel": "Xcode Cloud",
         "status": "added",
@@ -178,7 +205,7 @@
         "base": {
           "from": "app",
           "to": "vendor_clouds",
-          "label": "voice, video and tasks"
+          "label": "voice, video, tasks, access tokens"
         },
         "status": "removed",
         "classifications": [
@@ -256,7 +283,7 @@
         "head": {
           "from": "github",
           "to": "xcloud",
-          "label": "push"
+          "label": "manual start · build"
         },
         "status": "added",
         "classifications": [
@@ -282,7 +309,7 @@
         "head": {
           "from": "harness",
           "to": "web",
-          "label": "HTTPS, read-only"
+          "label": "HTTPS · queries, no writes"
         },
         "status": "added",
         "classifications": [
@@ -304,12 +331,10 @@
         },
         "status": "changed",
         "classifications": [
-          "geometry",
           "semantic"
         ],
         "changedFields": [
-          "/label",
-          "/labelDy"
+          "/label"
         ]
       },
       {
@@ -317,7 +342,7 @@
         "head": {
           "from": "litellm",
           "to": "frontier_apis",
-          "label": "phase 1 · photo + question"
+          "label": "phase 1 · photo + prompts"
         },
         "status": "added",
         "classifications": [
@@ -350,7 +375,7 @@
         "head": {
           "from": "litellm",
           "to": "unsloth",
-          "label": "phase 2 · new route"
+          "label": "phase 2 · unsloth"
         },
         "status": "added",
         "classifications": [
@@ -376,7 +401,7 @@
         "head": {
           "from": "turn",
           "to": "ggw",
-          "label": "HTTPS over tailnet"
+          "label": "HTTPS · tailnet"
         },
         "status": "added",
         "classifications": [
@@ -473,16 +498,6 @@
       }
     ]
   },
-  "provenance": {
-    "changedFields": [
-      "/repository"
-    ],
-    "base": {
-      "revision": "73c53185fc2498419d082286806a4237c2d47726",
-      "provider": "github"
-    },
-    "head": null
-  },
   "identity": {
     "components": "components[].id",
     "connections": "connections[].id (required)",
@@ -496,8 +511,8 @@
     "Boundary identity is conservatively derived from kind + label."
   ],
   "artifact": {
-    "sha256": "2c2948ee400292ad0d24bc7fb234a1c99e5d55d31f33899dba2911c6dae6db11",
-    "bytes": 2462240
+    "sha256": "d6eb990d4e8da0b6a3aca2ec167e34a34e5f97f066df26dd0b3b5d66128f85b5",
+    "bytes": 2471198
   },
   "validation": {
     "checksPassed": 28,

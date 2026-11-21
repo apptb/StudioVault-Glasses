@@ -3,6 +3,11 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Glasses Assistant - Target (planned)",
+    "repository": {
+      "url": "https://github.com/apptb/StudioVault-Glasses",
+      "provider": "github",
+      "revision": "73c53185fc2498419d082286806a4237c2d47726"
+    },
     "subtitle": "Target as of 2026-11-21. Glasses to the iPhone app, over the tailnet to a gateway on the Mac, through the model router to frontier APIs in phase 1 and local models in phase 2. Sublabels say what is planned.",
     "output": "docs/architecture/glasses-assistant/glasses-assistant.html",
     "visual_preset": "signal-flow",
@@ -13,7 +18,7 @@
       "id": "github",
       "type": "external",
       "label": "GitHub",
-      "sublabel": "apptb/StudioVault-Glasses",
+      "sublabel": "fork now · repo undecided",
       "tag": "live",
       "pos": [
         40,
@@ -28,7 +33,7 @@
       "id": "xcloud",
       "type": "cloud",
       "label": "Xcode Cloud",
-      "sublabel": "planned · sign · TestFlight",
+      "sublabel": "planned · proposed · sign",
       "tag": "planned",
       "pos": [
         320,
@@ -47,7 +52,7 @@
       "tag": "configured",
       "pos": [
         40,
-        224
+        232
       ],
       "size": [
         150,
@@ -58,11 +63,19 @@
       "id": "app",
       "type": "frontend",
       "label": "Glasses app (iOS)",
-      "sublabel": "planned · rebase, DAT 0.4 → 1.x",
-      "tag": "planned",
+      "sublabel": "DAT 0.4 now · 1.x rebase planned",
+      "tag": "configured",
+      "sources": [
+        {
+          "path": "samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj",
+          "line": 976,
+          "end_line": 983,
+          "label": "DAT SDK pin 0.4.0"
+        }
+      ],
       "pos": [
         310,
-        224
+        232
       ],
       "size": [
         190,
@@ -77,7 +90,7 @@
       "tag": "planned",
       "pos": [
         310,
-        354
+        362
       ],
       "size": [
         190,
@@ -92,7 +105,7 @@
       "tag": "planned",
       "pos": [
         310,
-        484
+        492
       ],
       "size": [
         190,
@@ -107,7 +120,7 @@
       "tag": "planned",
       "pos": [
         310,
-        614
+        622
       ],
       "size": [
         190,
@@ -122,7 +135,7 @@
       "tag": "planned",
       "pos": [
         640,
-        344
+        352
       ],
       "size": [
         190,
@@ -137,7 +150,7 @@
       "tag": "planned",
       "pos": [
         640,
-        484
+        492
       ],
       "size": [
         190,
@@ -152,7 +165,7 @@
       "tag": "configured",
       "pos": [
         920,
-        484
+        492
       ],
       "size": [
         180,
@@ -167,7 +180,7 @@
       "tag": "configured",
       "pos": [
         1190,
-        484
+        492
       ],
       "size": [
         170,
@@ -178,11 +191,11 @@
       "id": "unsloth",
       "type": "backend",
       "label": "Unsloth Studio",
-      "sublabel": "planned · no route yet",
-      "tag": "planned",
+      "sublabel": "host unknown · route planned",
+      "tag": "configured",
       "pos": [
         1190,
-        344
+        250
       ],
       "size": [
         170,
@@ -197,7 +210,7 @@
       "tag": "configured",
       "pos": [
         640,
-        624
+        632
       ],
       "size": [
         190,
@@ -208,11 +221,11 @@
       "id": "worker",
       "type": "backend",
       "label": "Daily synthesis worker",
-      "sublabel": "brief + audio + archify",
+      "sublabel": "brief now · log input planned",
       "tag": "configured",
       "pos": [
         920,
-        624
+        632
       ],
       "size": [
         180,
@@ -227,7 +240,7 @@
       "tag": "planned",
       "pos": [
         1190,
-        624
+        632
       ],
       "size": [
         170,
@@ -272,7 +285,7 @@
       "tag": "configured",
       "pos": [
         1190,
-        222
+        148
       ],
       "size": [
         170,
@@ -300,7 +313,6 @@
         "ggw",
         "litellm",
         "localmodels",
-        "unsloth",
         "vault",
         "worker",
         "turnlog"
@@ -339,7 +351,7 @@
       "id": "gh-xcloud",
       "from": "github",
       "to": "xcloud",
-      "label": "push",
+      "label": "manual start · build",
       "variant": "dashed"
     },
     {
@@ -375,7 +387,7 @@
       "id": "turn-ggw",
       "from": "turn",
       "to": "ggw",
-      "label": "HTTPS over tailnet",
+      "label": "HTTPS · tailnet",
       "variant": "emphasis"
     },
     {
@@ -389,7 +401,7 @@
       "id": "litellm-frontier",
       "from": "litellm",
       "to": "frontier_apis",
-      "label": "phase 1 · photo + question",
+      "label": "phase 1 · photo + prompts",
       "variant": "security",
       "labelDx": -74,
       "labelDy": -195
@@ -404,7 +416,7 @@
       "id": "litellm-unsloth",
       "from": "litellm",
       "to": "unsloth",
-      "label": "phase 2 · new route",
+      "label": "phase 2 · unsloth",
       "fromSide": "right",
       "toSide": "left"
     },
@@ -440,11 +452,11 @@
       "id": "harness-web",
       "from": "harness",
       "to": "web",
-      "label": "HTTPS, read-only",
+      "label": "HTTPS · queries, no writes",
       "variant": "security",
       "labelAt": [
-        787,
-        276
+        655,
+        298
       ]
     },
     {
@@ -489,9 +501,10 @@
       "items": [
         "A trigger on the glasses or phone starts a turn: one photo, one spoken question, transcribed on the phone",
         "The phone sends image and transcript to the gateway on the Mac; the answer returns on the same request and is spoken through the glasses",
-        "Two things leave the private network, both from the Mac: the photo and question to the frontier APIs in phase 1, and read-only web requests from the harness lane",
+        "This design makes two kinds of call out of the private network, both from the Mac: to the frontier APIs in phase 1 and afterwards on any route not yet moved (the photo, the question, and a harness's prompts if its model calls use a frontier route), and search queries and page requests from the harness lane",
+        "Not drawn: what the platforms do on their own. Meta's assistant hears the launch phrase and carries the glasses link, Reminders may sync through iCloud, and the vault follows whatever sync the operator already runs. None of this was checked. How the daily worker turns the log into a brief and audio (its own model and voice calls) was not checked either",
         "The phone holds no model key. Keys for the frontier APIs live in the router on the Mac",
-        "The Mac accepts nothing from the public internet. The phone reaches the gateway over the tailnet with a device token"
+        "By design the gateway is published on the tailnet only, never on a public funnel, and this plan opens no port to the public internet; what else the Mac exposes was not probed. The phone reaches the gateway with a device token"
       ]
     },
     {
@@ -499,27 +512,30 @@
       "title": "Frontier first, then local",
       "items": [
         "Phase 1 answers through the Claude API, the DeepSeek platform and OpenAI to set the quality bar",
-        "Phase 2 moves routes to the Mac's local servers, Unsloth Studio and GLM on the DGX pair",
+        "Phase 2 moves a route to the Mac's local servers, Unsloth Studio or GLM on the DGX pair only once it matches the frontier baseline on the eval set. Until then the photo and question on that route still go to the frontier APIs. The frontier routes are kept, so either phase can be the default at any time",
         "Switching is meant to be a route change in LiteLLM only; that is a design intent, not yet tested",
-        "The four vendor clouds the old app called from the phone are no longer called"
+        "Once the app moves to the gateway, the four vendor clouds the old app calls from the phone are no longer called"
       ]
     },
     {
       "dot": "rose",
-      "title": "Gates that stay with the operator",
+      "title": "Operator-only gates",
       "items": [
-        "Signing, App Store Connect, TestFlight and device registration",
-        "Exposing the gateway on the tailnet, API keys and any router configuration change",
-        "Purchases, sends to other people, deletions: never from a voice command"
+        "Starting an Xcode Cloud build and adding it to a tester group, signing, App Store Connect, TestFlight and device registration",
+        "Exposing the gateway on the tailnet, API keys, any router configuration change and the change to the daily worker",
+        "Purchases, sends to other people, deletions: never from a voice command",
+        "Tiers: the gateway sorts every tool call into read, reversible write, act on the Mac after a spoken confirm, or never run"
       ]
     },
     {
       "dot": "amber",
       "title": "What exists, what is planned",
       "items": [
-        "Not built or not wired as of 2026-11-21: Xcode Cloud workflow, the app's move to the upstream base, wake trigger, turn engine, Reminders hook, harness lane, glasses gateway, turn log, Unsloth route, frontier routes",
-        "Proposed, not yet decided by the operator: Xcode Cloud for build and delivery; Unsloth Studio as a phase 2 server",
-        "Tagged configured: the router, local model servers, DGX pair, daily worker, vault and glasses exist per the operator's log or word; none was probed. The vault is the operator's current Obsidian vault, not the retired StudioVault repository",
+        "Not built or not wired as of 2026-11-21: Xcode Cloud workflow, wake trigger, turn engine, Reminders hook, harness lane, glasses gateway, turn log, frontier routes",
+        "Exists, with a change planned: the app (rebase onto upstream and SDK 1.x), the router (frontier routes), Unsloth Studio (a route from the router), the daily worker (the turn log as a new input). Unsloth Studio is drawn outside the machine frames because which machine it runs on is open question O-3",
+        "Proposed, not yet decided by the operator: Xcode Cloud for build and delivery. The route to Unsloth Studio needs the operator's approval when it is made",
+        "Where the working code lives is open question O-9. The plan's default (D-12) is a new private repository. The GitHub box stands for the public fork apptb/StudioVault-Glasses, which is what exists today; no upstream code is pushed there until O-9 is answered",
+        "Tagged configured: the app was read in source at commit 73c5318 and not seen running. The router, local model servers, DGX pair, daily worker, vault, glasses and Unsloth Studio exist per the operator's log or word; none was probed. The vault is the operator's current Obsidian vault, not the retired StudioVault repository",
         "Harness model calls are drawn through the router. A harness that can only call its vendor directly would be a third exit and is not used until that is drawn and approved"
       ]
     },
@@ -527,11 +543,11 @@
       "dot": "slate",
       "title": "Reading the lines",
       "items": [
-        "Teal, thick: the path of one turn",
-        "Pink, dashed: leaves the private network",
-        "Purple, dashed: asynchronous or out of band",
-        "Grey: supporting calls",
-        "On a phone the cards read well and the map needs panning"
+        "Teal, thick: the path of one turn as far as the router; it continues on the pink line to the frontier APIs in phase 1 and on the grey lines to local models in phase 2",
+        "Pink (red in the light theme), dashed: leaves the private network",
+        "Purple, dashed: asynchronous or out of band. The build path at the top runs through GitHub and Apple over the public internet; it carries source and the signed app, not turn data",
+        "Grey: supporting calls and the phase 2 model routes",
+        "On a phone the cards read well; the map has to be zoomed and panned"
       ]
     }
   ]

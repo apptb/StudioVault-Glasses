@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-11-21T00:51:02.661Z",
+  "startedAt": "2026-11-21T01:53:24.430Z",
   "specification": {
-    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/head.json",
-    "sha256": "f0f534eead6ab079491a465ec4dd12bc56b786e8b4b3b2f42cd967cae785eecd",
-    "bytes": 12054
+    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/head.json",
+    "sha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+    "bytes": 14538
   },
   "artifact": {
-    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
-    "sha256": "7ce6a4b2cf68d25dd6bd94648e291c9ecb941065b3ac859633fe4ed7bf6106ad",
-    "bytes": 876961
+    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
+    "sha256": "021dbcfd30e877520eef4a4da2dc77af3fc2ab5fcb765f124993f135ad02b70f",
+    "bytes": 880091
   },
   "stages": {
     "validate": {
@@ -27,10 +27,12 @@
         "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/archify-src/Archify/archify/bin/archify.mjs",
         "deliver",
         "architecture",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/head.json",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/head.json",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/user/StudioVault-Glasses",
         "--json"
       ],
       "receipt": {
@@ -38,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "f0f534eead6ab079491a465ec4dd12bc56b786e8b4b3b2f42cd967cae785eecd",
-          "bytes": 12054
+          "sha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+          "bytes": 14538
         },
         "validation": {
           "checksPassed": 9,
@@ -54,33 +56,35 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 440,
+      "durationMs": 419,
       "command": [
         "/opt/node22/bin/node",
         "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/archify-src/Archify/archify/bin/archify.mjs",
         "deliver",
         "architecture",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/head.json",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/head.json",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "--quality",
         "showcase",
+        "--repo-root",
+        "/home/user/StudioVault-Glasses",
         "--json"
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "80343cea-7cf3-4a1e-ba8a-ddc7eb6338d2",
+        "receiptId": "3a3b230f-9405-4f0f-891a-3773bbaafb52",
         "ok": true,
         "command": "deliver",
         "type": "architecture",
-        "input": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/head.json",
-        "output": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "input": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/head.json",
+        "output": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "specification": {
-          "sha256": "f0f534eead6ab079491a465ec4dd12bc56b786e8b4b3b2f42cd967cae785eecd",
-          "bytes": 12054
+          "sha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+          "bytes": 14538
         },
         "artifact": {
-          "sha256": "7ce6a4b2cf68d25dd6bd94648e291c9ecb941065b3ac859633fe4ed7bf6106ad",
-          "bytes": 876961
+          "sha256": "021dbcfd30e877520eef4a4da2dc77af3fc2ab5fcb765f124993f135ad02b70f",
+          "bytes": 880091
         },
         "validation": {
           "checksPassed": 9,
@@ -89,6 +93,12 @@
           "compositionStatus": "pass",
           "errors": 0,
           "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/apptb/StudioVault-Glasses",
+          "revision": "73c53185fc2498419d082286806a4237c2d47726",
+          "references": 1
         },
         "update": {
           "status": "unavailable",
@@ -106,20 +116,20 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 203,
+      "durationMs": 158,
       "command": [
         "/opt/node22/bin/node",
         "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/archify-src/Archify/archify/bin/archify.mjs",
         "check",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "file": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "artifact": {
-          "sha256": "7ce6a4b2cf68d25dd6bd94648e291c9ecb941065b3ac859633fe4ed7bf6106ad",
-          "bytes": 876961
+          "sha256": "021dbcfd30e877520eef4a4da2dc77af3fc2ab5fcb765f124993f135ad02b70f",
+          "bytes": 880091
         },
         "checks": [
           {
@@ -186,16 +196,16 @@
             "containerBorderRuns": 0,
             "labelRouteClearanceIssues": 0,
             "labelCanvasOverflowIssues": 0,
-            "minLabelRouteClearance": 20,
+            "minLabelRouteClearance": 17.3,
             "desktopReadabilityIssues": 0,
             "viewportHeightIssues": 0,
             "minProjectedNodeTextPx": 7.5,
-            "maxBends": 2,
-            "routesOverSuggestedBends": 0,
+            "maxBends": 3,
+            "routesOverSuggestedBends": 1,
             "maxStretch": 1,
             "routesOverSuggestedStretch": 0,
-            "minSegmentPx": 38,
-            "minInteriorSegmentPx": 133,
+            "minSegmentPx": 24,
+            "minInteriorSegmentPx": 83,
             "shortSegmentCount": 0,
             "shortEndpointSegmentCount": 0,
             "shortInteriorSegmentCount": 0,
@@ -209,7 +219,20 @@
           },
           "routeReview": {
             "crossings": [],
-            "detours": []
+            "detours": [
+              {
+                "relationship": {
+                  "id": "litellm-dgx",
+                  "from": "litellm",
+                  "to": "dgx_glm",
+                  "label": "phase 2 · glm",
+                  "collectionIndex": 10,
+                  "artifactIndex": 11
+                },
+                "bends": 3,
+                "stretch": 1
+              }
+            ]
           },
           "leadingSpace": {
             "measured": true,
@@ -217,7 +240,7 @@
             "emptyTopRatio": 0.014,
             "occupiedTop": 11,
             "viewBoxTop": 0,
-            "canvasHeight": 776,
+            "canvasHeight": 784,
             "typicalNodeHeight": 64,
             "reviewSuggested": false
           },
@@ -247,18 +270,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "80343cea-7cf3-4a1e-ba8a-ddc7eb6338d2"
+        "deliveryReceiptId": "3a3b230f-9405-4f0f-891a-3773bbaafb52"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 2768,
+      "durationMs": 3074,
       "command": [
         "/opt/node22/bin/node",
         "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/archify-src/Archify/archify/bin/archify.mjs",
         "browser-check",
-        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+        "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
         "--json",
         "--require-provenance"
       ],
@@ -271,11 +294,11 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "80343cea-7cf3-4a1e-ba8a-ddc7eb6338d2",
+        "deliveryReceiptId": "3a3b230f-9405-4f0f-891a-3773bbaafb52",
         "artifact": {
-          "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
-          "sha256": "7ce6a4b2cf68d25dd6bd94648e291c9ecb941065b3ac859633fe4ed7bf6106ad",
-          "bytes": 876961
+          "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
+          "sha256": "021dbcfd30e877520eef4a4da2dc77af3fc2ab5fcb765f124993f135ad02b70f",
+          "bytes": 880091
         },
         "state": {
           "detail": "read",
@@ -297,7 +320,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 918,
+              "scrollHeight": 925,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -312,15 +335,15 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 99,
                 "diagramChromePx": 78,
-                "svgPx": 728,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 7.504225352112676,
               "minimumProjectedNonEdgeTextPx": 8.44225352112676,
               "minimumProjectedEdgeTextPx": 7.504225352112676,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -358,21 +381,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1371,
-              "diagramWidth": 1341,
+              "readerWidth": 1362,
+              "diagramWidth": 1332,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
-                "svgPx": 733,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
-              "minimumProjectedNodeTextPx": 7.554929577464788,
-              "minimumProjectedNonEdgeTextPx": 8.499295774647887,
-              "minimumProjectedEdgeTextPx": 7.554929577464788,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeTextPx": 7.504225352112676,
+              "minimumProjectedNonEdgeTextPx": 8.44225352112676,
+              "minimumProjectedEdgeTextPx": 7.504225352112676,
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -410,21 +433,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1517,
-              "diagramWidth": 1487,
+              "readerWidth": 1502,
+              "diagramWidth": 1472,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
                 "svgPx": 813,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -468,15 +491,15 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 94,
                 "diagramChromePx": 94,
-                "svgPx": 1022,
+                "svgPx": 1032,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -558,7 +581,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 918,
+              "scrollHeight": 925,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -573,15 +596,15 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 99,
                 "diagramChromePx": 78,
-                "svgPx": 728,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 7.504225352112676,
               "minimumProjectedNonEdgeTextPx": 8.44225352112676,
               "minimumProjectedEdgeTextPx": 7.504225352112676,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -619,21 +642,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1371,
-              "diagramWidth": 1341,
+              "readerWidth": 1362,
+              "diagramWidth": 1332,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
-                "svgPx": 733,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
-              "minimumProjectedNodeTextPx": 7.554929577464788,
-              "minimumProjectedNonEdgeTextPx": 8.499295774647887,
-              "minimumProjectedEdgeTextPx": 7.554929577464788,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeTextPx": 7.504225352112676,
+              "minimumProjectedNonEdgeTextPx": 8.44225352112676,
+              "minimumProjectedEdgeTextPx": 7.504225352112676,
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -671,21 +694,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1517,
-              "diagramWidth": 1487,
+              "readerWidth": 1502,
+              "diagramWidth": 1472,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
                 "svgPx": 813,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -729,15 +752,15 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 94,
                 "diagramChromePx": 94,
-                "svgPx": 1022,
+                "svgPx": 1032,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -771,7 +794,7 @@
               "innerWidth": 1440,
               "innerHeight": 900,
               "scrollWidth": 1440,
-              "scrollHeight": 918,
+              "scrollHeight": 925,
               "overflowX": false,
               "overflowY": true,
               "verticalScrollAccepted": true,
@@ -786,15 +809,15 @@
                 "bodyPaddingPx": 12,
                 "headerPx": 99,
                 "diagramChromePx": 78,
-                "svgPx": 728,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 7.504225352112676,
               "minimumProjectedNonEdgeTextPx": 8.44225352112676,
               "minimumProjectedEdgeTextPx": 7.504225352112676,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -832,21 +855,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1371,
-              "diagramWidth": 1341,
+              "readerWidth": 1362,
+              "diagramWidth": 1332,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
-                "svgPx": 733,
+                "svgPx": 735,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
-              "minimumProjectedNodeTextPx": 7.554929577464788,
-              "minimumProjectedNonEdgeTextPx": 8.499295774647887,
-              "minimumProjectedEdgeTextPx": 7.554929577464788,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeTextPx": 7.504225352112676,
+              "minimumProjectedNonEdgeTextPx": 8.44225352112676,
+              "minimumProjectedEdgeTextPx": 7.504225352112676,
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -884,21 +907,21 @@
               "readerOverflow": null,
               "readerFit": "intrinsic-height",
               "ok": true,
-              "readerWidth": 1517,
-              "diagramWidth": 1487,
+              "readerWidth": 1502,
+              "diagramWidth": 1472,
               "pageComposition": {
                 "bodyPaddingPx": 64,
                 "headerPx": 107,
                 "diagramChromePx": 84,
                 "svgPx": 813,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -942,15 +965,15 @@
                 "bodyPaddingPx": 64,
                 "headerPx": 94,
                 "diagramChromePx": 94,
-                "svgPx": 1022,
+                "svgPx": 1032,
                 "cardsPx": 0,
-                "viewBoxHeight": 776
+                "viewBoxHeight": 784
               },
               "viewBoxWidth": 1420,
               "minimumProjectedNodeTextPx": 8,
               "minimumProjectedNonEdgeTextPx": 9,
               "minimumProjectedEdgeTextPx": 8,
-              "minimumProjectedNodeText": "push",
+              "minimumProjectedNodeText": "manual start · build",
               "minimumProjectedNodeTextDetail": "edge",
               "minimumProjectedNodeTextOwner": {
                 "kind": "edge",
@@ -992,13 +1015,13 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.finalize.json",
-    "summaryReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json",
-    "browserCheckReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.browser-check.json"
+    "receipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.finalize.json",
+    "summaryReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json",
+    "browserCheckReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-21T00:51:06.198Z",
-  "durationMs": 3536,
+  "finishedAt": "2026-11-21T01:53:28.184Z",
+  "durationMs": 3754,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",

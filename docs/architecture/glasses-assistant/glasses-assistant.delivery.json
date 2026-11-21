@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "80343cea-7cf3-4a1e-ba8a-ddc7eb6338d2",
+  "receiptId": "3a3b230f-9405-4f0f-891a-3773bbaafb52",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/head.json",
-  "output": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/r2/docs/architecture/glasses-assistant/glasses-assistant.html",
+  "input": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/head.json",
+  "output": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.html",
   "specification": {
-    "sha256": "f0f534eead6ab079491a465ec4dd12bc56b786e8b4b3b2f42cd967cae785eecd",
-    "bytes": 12054
+    "sha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+    "bytes": 14538
   },
   "artifact": {
-    "sha256": "7ce6a4b2cf68d25dd6bd94648e291c9ecb941065b3ac859633fe4ed7bf6106ad",
-    "bytes": 876961
+    "sha256": "021dbcfd30e877520eef4a4da2dc77af3fc2ab5fcb765f124993f135ad02b70f",
+    "bytes": 880091
   }
 }

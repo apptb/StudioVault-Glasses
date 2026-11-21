@@ -187,7 +187,7 @@ Status uses the map's words. `live`: read or seen working by the author. `config
 
 As found, the phone app calls four vendor clouds directly (Gemini, Azure, E2B, Vercel). The target calls none of them.
 
-Two things leave the private network, both from the Mac: the photo and question to the frontier APIs in phase 1, and the harness lane's read-only web requests. The phone talks to the gateway only.
+This design makes two kinds of call out of the private network, both from the Mac: to the frontier APIs in phase 1 and afterwards on any route not yet moved (the photo, the question, and a harness's prompts if its model calls use a frontier route), and the harness lane's search queries and page reads. The phone talks to the gateway only. What the platforms do on their own (Meta's assistant, iCloud, vault sync) and how the daily worker makes its brief and audio are not drawn and were not checked.
 
 ### 4.2 One turn
 

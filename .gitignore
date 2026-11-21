@@ -17,3 +17,6 @@ samples/CameraAccessAndroid/build/
 samples/CameraAccessAndroid/app/build/
 
 docs/.vscode/
+
+# Program ledger lock file (tools/program/ledger.py)
+docs/program/*.lock

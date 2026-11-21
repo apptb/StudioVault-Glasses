@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Glasses Assistant - Sovereign Target",
+    "output": "docs/architecture/glasses-assistant/glasses-assistant.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "github", "type": "external", "label": "GitHub", "sublabel": "apptb/StudioVault-Glasses", "pos": [40, 40], "size": [150, 60] },
+    { "id": "xcloud", "type": "cloud", "label": "Xcode Cloud", "sublabel": "build · sign · TestFlight", "tag": "planned", "pos": [40, 150], "size": [150, 64] },
+    { "id": "glasses", "type": "external", "label": "Ray-Ban Meta", "sublabel": "camera · mic · speakers", "pos": [40, 410], "size": [150, 64] },
+
+    { "id": "app", "type": "frontend", "label": "Glasses app (iOS)", "sublabel": "DAT SDK 0.9 · upstream base", "tag": "changed", "pos": [320, 150], "size": [170, 64] },
+    { "id": "wake", "type": "frontend", "label": "Wake listener", "sublabel": "on-device keyword spotter", "tag": "planned", "pos": [320, 280], "size": [170, 64] },
+    { "id": "turn", "type": "frontend", "label": "Turn engine", "sublabel": "photo · transcript · reply", "tag": "planned", "pos": [320, 410], "size": [170, 64] },
+    { "id": "eventkit", "type": "database", "label": "Reminders", "sublabel": "EventKit on the phone", "tag": "planned", "pos": [320, 540], "size": [170, 64] },
+
+    { "id": "ggw", "type": "security", "label": "Glasses gateway", "sublabel": "device token · tools · audit", "tag": "planned", "pos": [660, 410], "size": [170, 64] },
+    { "id": "litellm", "type": "cloud", "label": "LiteLLM :4000", "sublabel": "9 routes + fallbacks", "tag": "configured", "pos": [940, 270], "size": [160, 64] },
+    { "id": "browser", "type": "backend", "label": "Browser agent", "sublabel": "local computer use", "tag": "planned", "pos": [940, 410], "size": [160, 64] },
+    { "id": "turnlog", "type": "database", "label": "Turn log + traces", "sublabel": "JSONL · OTLP :4318", "tag": "planned", "pos": [940, 550], "size": [160, 64] },
+    { "id": "mac_35b", "type": "backend", "label": "rapid-mlx 35B", "sublabel": "local.mac-fast · vision", "pos": [1200, 270], "size": [160, 64] },
+    { "id": "worker", "type": "backend", "label": "Daily synthesis worker", "sublabel": "brief + audio + archify", "pos": [1190, 550], "size": [180, 64] },
+    { "id": "vault", "type": "database", "label": "Obsidian vault", "sublabel": "intake notes · daily brief", "pos": [1200, 690], "size": [160, 64] },
+
+    { "id": "dgx_glm", "type": "backend", "label": "2x DGX Spark", "sublabel": "GLM-5.3-Flash · vision", "pos": [945, 60], "size": [150, 64] },
+    { "id": "web", "type": "external", "label": "Public web", "sublabel": "shops · search", "pos": [1470, 410], "size": [140, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "iPhone (TestFlight build)", "wraps": ["app", "wake", "turn", "eventkit"], "pad": 20 },
+    { "kind": "region", "label": "Mac Studio (launchd, tailnet only)", "wraps": ["ggw", "litellm", "browser", "turnlog", "mac_35b", "worker", "vault"], "pad": 20 },
+    { "kind": "region", "label": "2x DGX Spark cluster", "wraps": ["dgx_glm"], "pad": 14 }
+  ],
+  "connections": [
+    { "id": "gh-xcloud", "from": "github", "to": "xcloud", "label": "push", "variant": "dashed" },
+    { "id": "xcloud-app", "from": "xcloud", "to": "app", "label": "TestFlight build", "variant": "dashed" },
+    { "id": "app-wake", "from": "app", "to": "wake", "label": "audio session" },
+    { "id": "glasses-wake", "from": "glasses", "to": "wake", "label": "mic over HFP", "fromSide": "top", "toSide": "left" },
+    { "id": "glasses-turn", "from": "glasses", "to": "turn", "label": "DAT photo" },
+    { "id": "wake-turn", "from": "wake", "to": "turn", "label": "wake phrase", "variant": "emphasis" },
+    { "id": "turn-ggw", "from": "turn", "to": "ggw", "label": "HTTPS over tailnet", "variant": "security" },
+    { "id": "ggw-litellm", "from": "ggw", "to": "litellm", "label": "chat + image", "variant": "emphasis", "route": "orthogonal-h" },
+    { "id": "litellm-35b", "from": "litellm", "to": "mac_35b", "label": "mac-fast", "variant": "emphasis" },
+    { "id": "litellm-dgx", "from": "litellm", "to": "dgx_glm", "label": "glm-chat" },
+    { "id": "ggw-browser", "from": "ggw", "to": "browser", "label": "price check" },
+    { "id": "browser-web", "from": "browser", "to": "web", "label": "HTTPS", "variant": "security" },
+    { "id": "ggw-turnlog", "from": "ggw", "to": "turnlog", "label": "turn log", "variant": "dashed", "route": "orthogonal-h" },
+    { "id": "turnlog-worker", "from": "turnlog", "to": "worker", "label": "ingest", "variant": "dashed" },
+    { "id": "worker-vault", "from": "worker", "to": "vault", "label": "daily brief" },
+    { "id": "ggw-vault", "from": "ggw", "to": "vault", "label": "save note", "fromSide": "bottom", "toSide": "left" },
+    { "id": "turn-eventkit", "from": "turn", "to": "eventkit", "label": "create reminder" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One turn", "items": [
+      "Wake phrase heard on the phone, then one photo from the glasses and one spoken question",
+      "The phone sends image + transcript to the gateway on the Mac; the answer returns on the same request and is spoken",
+      "Nothing in the default path leaves the tailnet; the public web is reached only by the browser agent"
+    ] },
+    { "dot": "rose", "title": "Gates that stay with the operator", "items": [
+      "Signing, App Store Connect, TestFlight and device registration",
+      "Exposing the gateway on Tailscale Serve and any LiteLLM config change",
+      "Purchases, sends to other people, deletions: spoken confirmation, never automatic"
+    ] },
+    { "dot": "amber", "title": "Planned, not live", "items": [
+      "Everything tagged planned is on paper as of 2026-11-20",
+      "LiteLLM, rapid-mlx, the DGX pair, the daily worker and the vault are live per the operator's log",
+      "Vision through LiteLLM itself is unverified: the log proves vision on the backends, not through :4000"
+    ] }
+  ]
+}

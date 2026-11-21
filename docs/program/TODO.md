@@ -27,7 +27,7 @@ Acceptance for every task through M5 is in [PLAN.md](PLAN.md) section 6 under th
 - [ ] **M0-13** Install from TestFlight, turn on Developer Mode, pair the glasses, check photo and microphone · owner:operator · gate:R3 · state:queued
 - [ ] **M0-14** Move the Meta SDK pin to the current 1.x release in its own change · owner:any · gate:R1 · state:queued
 - [ ] **M0-15** Fallback device loop from the Mac with xcodebuild and devicectl · owner:code · gate:R2 · state:queued
-- [ ] **M0-16** Render the architecture map with Archify, review it, retire the preview · owner:any · gate:R1 · state:running
+- [x] **M0-16** Render the architecture map with Archify, review it, retire the preview · owner:any · gate:R1 · state:done
 - [ ] **M0-17** Harvest intent and use cases from the Athena notes · owner:any · gate:R0 · state:queued
 
 ## M1 · Photo turn through the gateway, button-triggered

@@ -76,6 +76,8 @@ append a ledger line and render again. No secrets are recorded here.
 
 ## Round 9 — Machine-identifying detail was committed to this public repository; the current files no longer carry it, the first commit still does (2026-11-21 01:05Z)
 
+> Superseded by round 14. Kept for the record; read that round for the current finding.
+
 - **Incident.** The first version of this package named a machine on the private network, local paths and the location of a key file. It held no key, token or address. The package was rewritten without them and the details moved to a private notes file handed to the operator. A push that would have replaced the branch history was refused by the session's permission rules, so the first commit on this branch still holds the old text and can be read from the pull request's commit list.
 - Lane `claude-code-web`, by Claude Code (web). State: **partial**. Reached: executed. Owner: operator. Grade A (Claude Code (web); scanned the files myself; the history rewrite was not done).
 - Rollback: none needed; the removed text is in the operator's private notes.
@@ -109,6 +111,43 @@ append a ledger line and render again. No secrets are recorded here.
 - Closes on: round 2 reports no confirmed blocking finding.
 - Evidence: `docs/architecture/glasses-assistant/review/round-1.md`
 
+## Round 14 — Round 9 restated: the first commit held no key or token, and no network address other than loopback (2026-11-21 01:55Z)
+
+- **Correction to round 9.** Round 9 said the first commit held no key, token or address. It did hold the loopback address in several lines. The rest of round 9 stands, including the item waiting on the operator.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); searched the commit myself).
+- Evidence: `a search of the first commit for dotted addresses found only the loopback address`
+
+## Round 15 — The fork's code sends the Google and Notion access tokens of linked accounts to the vendor sandbox with each task (2026-11-21 01:55Z)
+
+- **Probe.** Found by a reviewer in the second review round of the architecture map and confirmed in source at 73c5318. The Google token carries read access to Calendar and Gmail and file access to Drive. This was read in code, not observed running; whether an account was ever linked in a signed build is not known. The target design has no such path.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade A (Claude Code (web); read the lines at the pinned commit).
+- Closes on: the operator's decision.
+- Open and human-held:
+  - 1. If that build was ever signed in to Google or Notion and used, treat those tokens as shared with the sandbox vendor and decide whether to revoke them
+- Evidence: `samples/CameraAccess/CameraAccess/Agent/AgentBridge.swift:255-279 @73c5318`; `samples/CameraAccess/CameraAccess/Agent/GoogleAuthManager.swift:12-16 @73c5318`; `docs/program/PLAN.md section 2.1`
+
+## Round 16 — M0-16 running → done: Render the architecture map with Archify, review it, retire the preview (2026-11-21 01:55Z)
+
+- **Task state · M0-16.** The target, as-found and comparison pages exist with passing receipts, three review rounds ran against the checklist, and the hand-drawn preview is deleted.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade B (Claude Code (web); gates ran; reviewers were agents, not the operator).
+- Evidence: `docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json`; `docs/architecture/glasses-assistant/review/round-3.md`; `commit 48769b2`
+
+## Round 17 — The operator asked for a vault scaffold and a problem statement for a host-level AGENTS.md; both live in the skills repository (2026-11-21 01:55Z)
+
+- **Note.** On 2026-11-21 the operator asked for a templates folder in the live vault with a change-report template, a research-round and a ground-truth-round template, the visual standard made known to every agent there, plain lowercase folder names, and a problem statement for a root-level AGENTS.md to hand on. The vault could not be reached from this lane, so the scaffold is delivered with an installer that only adds what is missing. None of it belongs in this public repository.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: executed. Owner: operator. Grade A (Claude Code (web); the operator's own words).
+- Approval: operator 2026-11-21: 'create a lowercase t template folder ... the one template I'm asking you to make for sure is this report ... just write that up as a problem statement that will be handed off'.
+- Open and human-held:
+  - 1. Run the installer against the live vault, or have a local agent do it, and set the templates folder in Obsidian
+- Evidence: `apptb/studiovault-universal-skills, branch claude/rayban-meta-glasses-assistant-cb0gqs: assets/vault, docs/problem-statements/host-agents-md.md`
+
+## Round 18 — The map went through three review rounds; neither of the last two found a blocking defect (2026-11-21 01:55Z)
+
+- **Change · M0-16.** Round 2: 31 findings, none blocking, 16 should-level findings all confirmed by separate verifiers. Round 3: 15 findings, none blocking, 6 confirmed. All three round-3 reviewers called the target ready to deliver once text edits were made. Those edits are in; every gate passes again with one accepted advisory for a three-bend route. The edits after round 3 were checked by the gates and the author, not by new reviewers. The readme lists the renderer's limits. This closes what round 13 left open.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: verified. Owner: operator. Grade B (Claude Code (web); independent reviewers and verifiers were agents; the operator has not looked).
+- Commit: `48769b2`
+- Evidence: `docs/architecture/glasses-assistant/review/round-2.md`; `docs/architecture/glasses-assistant/review/round-3.md`; `docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json`; `docs/architecture/glasses-assistant/glasses-assistant.delta.receipt.json`
+
 ## Open and human-held, all rounds
 
 Every item an agent raised for the operator and nobody has closed, oldest first. Close one with
@@ -126,3 +165,5 @@ Every item an agent raised for the operator and nobody has closed, oldest first.
 - (round 7 item 9) O-9: private repository (the default) or this public fork for the working code
 - (round 7 item 10) O-10: how an agent reaches the Mac
 - (round 9 item 1) Approve replacing this branch's history with one clean commit (or delete the branch and pull request so it can be pushed fresh), and decide whether to ask GitHub Support to purge the old commit
+- (round 15 item 1) If that build was ever signed in to Google or Notion and used, treat those tokens as shared with the sandbox vendor and decide whether to revoke them
+- (round 17 item 1) Run the installer against the live vault, or have a local agent do it, and set the templates folder in Obsidian

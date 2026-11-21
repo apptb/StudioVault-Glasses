@@ -107,7 +107,7 @@ Check before relying on it: that image blocks, tool calls, thinking and refusal 
 Undo: stop the launch agent and remove the Tailscale Serve mapping.
 
 **D-04. Frontier models first, local models second.** *(operator)*
-Phase 1 answers through three frontier APIs so the bar is measured, not guessed: the Claude API with `claude-opus-5-5`, the DeepSeek platform with `deepseek-flash`, and an OpenAI vision model the operator names. Phase 2 moves routes to Unsloth Studio and the deepseek-recipe proxies on the Mac and to the DGX pair. A local route becomes the default only when it matches the frontier baseline on the eval set (R13).
+Phase 1 answers through three frontier APIs so the bar is measured, not guessed: the Claude API with `claude-opus-5-5`, the DeepSeek platform with `deepseek-flash`, and an OpenAI vision model the operator names. Phase 2 moves routes to the model servers and deepseek-recipe proxies already on the Mac, to Unsloth Studio on whichever machine it runs (O-3), and to the DGX pair. A local route becomes the default only when it matches the frontier baseline on the eval set (R13).
 Why: it gives a working assistant early and an honest target for the local stack. DeepSeek is the cleanest pair to compare, because the platform's `deepseek-flash` and the model behind the local proxies are the same family.
 Undo: routes are configuration. Either phase can be the default at any time.
 
@@ -177,7 +177,7 @@ Status uses the map's words. `live`: read or seen working by the author. `config
 | LiteLLM router | Mac Studio | configured; frontier routes and a glasses alias planned | Routes every model call, the gateway's and the harnesses' |
 | Frontier APIs | public internet | planned | Claude, DeepSeek platform, OpenAI: the phase 1 baseline |
 | Local models | Mac Studio | configured | The model servers and deepseek-recipe proxies the router reaches today: phase 2 |
-| Unsloth Studio | Mac Studio | planned (installed per the operator, no route yet) | A phase 2 server |
+| Unsloth Studio | not recorded (question O-3) | configured: installed per the operator. A route from the router is planned | A phase 2 server. Drawn outside every machine frame until O-3 is answered |
 | GLM server | DGX cluster | configured | Large model; image input is claimed in the log and untested |
 | Harness lane | Mac Studio | planned | DSH, Pi or OpenCode headless for price checks, browsing and computer use |
 | Public web | public internet | live | What the harness lane reads |

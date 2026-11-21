@@ -10,7 +10,7 @@ You are picking up a build program called GLASSES-1 as lane `duet`. I am the ope
 
 I want a hands-free assistant on my Ray-Ban Meta glasses. A trigger starts a turn, the glasses take a photo, I ask a question, and the answer comes back in my ear. When the question is a job (check a price, save a note, set a reminder, do something on my Mac), my Mac does it and leaves a record in my Obsidian vault. The iPhone app is built and signed by Xcode Cloud and reaches me through TestFlight.
 
-Models come in two phases. First the frontier APIs (Claude, the DeepSeek platform, OpenAI), so we know what good looks like. Then the same turns on my own machines (Unsloth Studio and the deepseek-recipe proxies on the Mac, a large model on my DGX pair), which become the default once they match the frontier results on a fixed set of photo questions.
+Models come in two phases. First the frontier APIs (Claude, the DeepSeek platform, OpenAI), so we know what good looks like. Then the same turns on my own machines (the model servers and deepseek-recipe proxies on the Mac, Unsloth Studio, a large model on my DGX pair), which become the default once they match the frontier results on a fixed set of photo questions.
 
 A plan already exists. It was written in cloud sessions that could read code, my execution log and the web, and could not touch my machines. So it is a set of sourced claims, not verified facts. Your first job is to find out which claims hold.
 

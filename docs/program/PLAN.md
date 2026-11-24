@@ -32,7 +32,7 @@ Out of scope: Android, App Store release, anything clinical or health-related (s
 
 ## 2. What exists today
 
-Confidence marks: **read** means read directly in a file in this session; **log** means stated in the operator's execution log of 2026-11-17 to 11-19, which is not in this repository; **operator** means the operator said so on 2026-11-21; **web** means one researcher fetched it from a vendor page on 2026-11-20 or 11-21; **unverified** means nobody has checked it on the real system.
+Confidence marks: **read** means read directly in a file in this session; **log** means stated in the operator's execution log of 2026-11-17 to 11-19, which is not in this repository; **operator** means the operator said so on 2026-11-21; **web** means one researcher fetched it from a vendor page on 2026-11-20 or 11-21; **unverified** means nobody has checked it on the real system. **host** means seen on the Mac itself on 2026-11-24 by a read-only survey that a session running on that machine carried out; details that locate the machine stay in the operator's private notes.
 
 ### 2.1 The app code
 
@@ -59,7 +59,12 @@ Confidence marks: **read** means read directly in a file in this session; **log*
 | One fast route is a 35B vision model on the Mac at about 168 tokens a second, with tools and vision reported working on the backend. | log |
 | The DGX pair serves a large vision model. One route to it has a 1M-token window; tool-call decoding is its slowest number. | log |
 | DeepSeek V4.1 Flash runs locally behind two proxies built on DeepSeek's `deepseek-recipe` library, one in Python and one in Rust. The operator calls them fast and well suited to agent traffic. | log, operator |
-| Unsloth Studio is installed. Where, and on which port, is not recorded in the log. | operator |
+| Unsloth Studio is installed, and runs on the Mac Studio as a service. | operator, host |
+| The Mac Studio is an M3 Ultra with 256 GB of memory. One Mac was surveyed. | host |
+| The model router, both DeepSeek proxies, two local model servers and Unsloth Studio run on the Mac as services. Each listens on the machine itself only. | host |
+| Hermes 0.23.2 is installed on the Mac and its gateway runs there as a service. | host |
+| Claude Code and Codex are on the Mac's command path. OpenCode and Pi are not, and the DeepSeek Harness is installed as an app with no `dsh` command on the path. | host |
+| Xcode 27.2 is installed on the Mac. | host |
 | No image request through LiteLLM itself is recorded. Text tool calls through it are recorded as working for six agent harnesses. | log; image path unverified |
 | Nothing on the fabric is reachable from a phone today. | log |
 | The log mentions no speech-to-text service. A text-to-speech voice exists for the daily brief. | log (absence, not a statement) |
@@ -141,6 +146,7 @@ Undo: not offered. Loosening a tier is an operator decision recorded in the ledg
 **D-09. Mac-side tasks run through a headless harness.** *(operator: DSH, Pi or OpenCode may be invoked headless)*
 The gateway starts one harness job at a time with a fixed argument list and no shell, passes the task as a single argument, and reads the result. Which harness runs which task is decided by `M4-01` from what each can do on the Mac. A harness's own model calls go through LiteLLM, like the gateway's, so keys, routes and the log stay in one place. A harness that can only call its vendor directly would be a third way out of the private network; it is not used until that is drawn on the map and approved.
 Why: the harnesses are installed, already talk to the fabric, and at least one is expected to hold the computer-use permissions. A headless job is code execution, so it sits behind the tiers in D-08.
+Found on the Mac on 2026-11-24: Codex and Claude Code are on the command path; DSH, Pi and OpenCode are not (DSH is installed as an app). `M4-01` starts from that.
 Undo: remove the tool from the gateway's list.
 
 **D-10. This package lives in the repository.**
@@ -177,7 +183,7 @@ Status uses the map's words. `live`: read or seen working by the author. `config
 | LiteLLM router | Mac Studio | configured; frontier routes and a glasses alias planned | Routes every model call, the gateway's and the harnesses' |
 | Frontier APIs | public internet | planned | Claude, DeepSeek platform, OpenAI: the phase 1 baseline |
 | Local models | Mac Studio | configured | The model servers and deepseek-recipe proxies the router reaches today: phase 2 |
-| Unsloth Studio | not recorded (question O-3) | configured: installed per the operator. A route from the router is planned | A phase 2 server. Drawn outside every machine frame until O-3 is answered |
+| Unsloth Studio | Mac Studio (host, 2026-11-24) | configured: runs as a service. A route from the router is planned | A phase 2 server. The map still draws it outside every machine frame; `M0-18` moves it |
 | GLM server | DGX cluster | configured | Large model; image input is claimed in the log and untested |
 | Harness lane | Mac Studio | planned | DSH, Pi or OpenCode headless for price checks, browsing and computer use |
 | Public web | public internet | live | What the harness lane reads |
@@ -284,6 +290,7 @@ No feature code. M0 ends when the upstream app, renamed and re-signed as the ope
 | M0-15 | A signed build reaches the phone from the Mac without Xcode Cloud. Needed for M1 device work, or sooner if M0-12 stalls for more than a day. If neither applies it is dropped. |
 | M0-16 | The target and comparison pages exist with passing Archify receipts, a visual review has run against the standard's checklist, and the hand-drawn preview is deleted. |
 | M0-17 | `docs/program/reports/M0-17-athena-use-cases.md` lists the use cases and intents worth carrying forward, each in one line, with nothing else borrowed. The operator supplies or points to the source. |
+| M0-18 | The target model places Unsloth Studio inside the Mac Studio frame, `scripts/render.sh` passes every gate on both models and the comparison, a reviewer other than the author has looked at the rendered pages, and the map's README and review record say what changed. |
 
 ### M1. Photo turn through the gateway, button-triggered
 
@@ -397,6 +404,12 @@ Answering these is `M0-02`. None blocks M0-03.
 | O-8 | Which frontier accounts have API keys ready, which OpenAI model do you want, and what is the daily spend cap? | M0-05 |
 | O-9 | Should the working code live in a new private repository (the default) or in this public fork? | M0-07 and D-12 |
 | O-10 | How should an agent reach the Mac: a folder shared with a cloud session through Remote Control, a local Claude Code session, or another route you name? | Everything that needs a shell |
+
+**Answered so far**, by the survey of the Mac on 2026-11-24. The operator can still correct any of these.
+
+- O-1: the Mac surveyed has 256 GB. Whether a second Mac exists is not known.
+- O-3, in part: Unsloth Studio runs on the Mac Studio. The services the execution log describes were seen running. The port is in the operator's private notes.
+- O-10: a session started on the Mac from the Claude app can be briefed from a cloud session and its report read back. Attaching a folder of the Mac to a cloud session was not offered, and moving a cloud session onto the Mac needs a checkout of that session's first repository.
 
 ## 10. Who does what
 

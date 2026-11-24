@@ -148,6 +148,22 @@ append a ledger line and render again. No secrets are recorded here.
 - Commit: `48769b2`
 - Evidence: `docs/architecture/glasses-assistant/review/round-2.md`; `docs/architecture/glasses-assistant/review/round-3.md`; `docs/architecture/glasses-assistant/glasses-assistant.finalize-summary.json`; `docs/architecture/glasses-assistant/glasses-assistant.delta.receipt.json`
 
+## Round 19 — A read-only survey ran on the Mac and answered O-1, part of O-3 and O-10 (2026-11-24 17:20Z)
+
+- **Probe.** A session started on the Mac from the Claude app ran a read-only survey on 2026-11-24 and the cloud lane read its report. Seen there: an M3 Ultra with 256 GB; the model router, both DeepSeek proxies, two local model servers and Unsloth Studio running as services that listen on the machine itself only; Hermes 0.23.2 installed with its gateway running; Claude Code and Codex on the command path, and none of DSH, Pi or OpenCode there; Xcode 27.2. The survey created, changed and started nothing and printed no secret value. Details that locate the machine are in the operator's private notes, not in this repository.
+- Lane `claude-code-web`, by Claude Code (web). State: **verified**. Reached: executed. Owner: operator.
+- Not touched: Nothing on the Mac was changed. No fabric probe of an image request was run; M0-04 is still open.
+- Next: M0-18: move Unsloth Studio inside the Mac Studio frame on the map; M4-01 starts from which harnesses have a command on the path.
+- Evidence: `docs/program/PLAN.md section 2.2 (rows marked host)`; `docs/program/PLAN.md section 9 (Answered so far)`
+
+## Round 20 — New task M0-18: re-render the map with Unsloth Studio inside the Mac Studio frame (2026-11-24 17:20Z)
+
+- **Change · M0-18.** The survey answered where Unsloth Studio runs, so the map's placement of it outside every machine frame is out of date. A map change goes through the tester script and a review by someone other than the author.
+- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Owner: operator.
+- Rollback: remove the task line and its acceptance row.
+- Closes on: the acceptance for M0-18 in PLAN.md section 6.
+- Evidence: `docs/program/TODO.md (M0-18)`; `docs/program/PLAN.md section 6 (M0-18)`
+
 ## Open and human-held, all rounds
 
 Every item an agent raised for the operator and nobody has closed, oldest first. Close one with

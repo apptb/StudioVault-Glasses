@@ -29,6 +29,7 @@ Acceptance for every task through M5 is in [PLAN.md](PLAN.md) section 6 under th
 - [ ] **M0-15** Fallback device loop from the Mac with xcodebuild and devicectl · owner:code · gate:R2 · state:queued
 - [x] **M0-16** Render the architecture map with Archify, review it, retire the preview · owner:any · gate:R1 · state:done
 - [ ] **M0-17** Harvest intent and use cases from the Athena notes · owner:any · gate:R0 · state:queued
+- [ ] **M0-18** Re-render the map with Unsloth Studio inside the Mac Studio frame · owner:any · gate:R1 · state:queued
 
 ## M1 · Photo turn through the gateway, button-triggered
 

@@ -164,6 +164,19 @@ append a ledger line and render again. No secrets are recorded here.
 - Closes on: the acceptance for M0-18 in PLAN.md section 6.
 - Evidence: `docs/program/TODO.md (M0-18)`; `docs/program/PLAN.md section 6 (M0-18)`
 
+## Round 21 — A study of two reference clients for Hermes is in the plan package; seven questions added, nothing adopted (2026-11-24 18:01Z)
+
+- **Change.** The operator pointed to a Wear OS watch client and a room-speaker plugin for Hermes as a related part of the infrastructure. Six readers studied them, two verifiers checked each finding against the files, a reviewer faulted the write-up in 33 places and a second check in nine more; all are applied. The study proposes fourteen patterns, eight tasks and seven questions. Only the questions and six facts enter the plan; the tasks stay in the study until the operator adopts them.
+- Lane `claude-code-web`, by Claude Code (web). State: **proposed**. Reached: configured. Owner: operator. Grade B (Claude Code (web); read at pinned commits and checked by a second reader; both test suites run; nothing run on a device or against a real Hermes).
+- Commit: `278a76e`
+- Rollback: revert the commit; M0-02 goes back to O-1 to O-10.
+- Closes on: the operator answers O-11 to O-17 and rules on each proposed task in REFERENCE-CLIENTS.md section 7.
+- Not touched: decisions D-01 to D-12; the task board apart from M0-02's title; both reference repositories.
+- Open and human-held:
+  - 1. Answer O-11 to O-17
+  - 2. Adopt or drop each of the eight proposed tasks
+- Evidence: `docs/program/REFERENCE-CLIENTS.md`; `docs/program/PLAN.md section 2.4`; `docs/program/PLAN.md section 9 (O-11 to O-17)`; `docs/program/TODO.md (M0-02)`
+
 ## Open and human-held, all rounds
 
 Every item an agent raised for the operator and nobody has closed, oldest first. Close one with
@@ -183,3 +196,5 @@ Every item an agent raised for the operator and nobody has closed, oldest first.
 - (round 9 item 1) Approve replacing this branch's history with one clean commit (or delete the branch and pull request so it can be pushed fresh), and decide whether to ask GitHub Support to purge the old commit
 - (round 15 item 1) If that build was ever signed in to Google or Notion and used, treat those tokens as shared with the sandbox vendor and decide whether to revoke them
 - (round 17 item 1) Run the installer against the live vault, or have a local agent do it, and set the templates folder in Obsidian
+- (round 21 item 1) Answer O-11 to O-17
+- (round 21 item 2) Adopt or drop each of the eight proposed tasks

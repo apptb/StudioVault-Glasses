@@ -12,6 +12,7 @@ This repository is public. The package carries no host names, local paths or key
 | [RESOURCES.md](RESOURCES.md) | Repositories, models, SDKs, harnesses, vendor requirements | Anyone, when a probe changes a fact |
 | [LEDGER.jsonl](LEDGER.jsonl) | The machine record: append-only JSON, one event per line | Nobody by hand; `ledger.py` only |
 | [EXECUTION-LOG.md](EXECUTION-LOG.md) | The same record for people. Each ledger line becomes a "round" with a sentence heading, the finding, its evidence and what is waiting on the operator, in the shape of the operator's own execution log | Nobody by hand; `ledger.py render` |
+| [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md) | A study of two reference clients for the Hermes agent, with proposals for the plan. Nothing in it is adopted | Any lane; the operator rules on each proposal |
 | [../architecture/glasses-assistant/](../architecture/glasses-assistant/) | The as-found and target architecture models, the Archify pages and their receipts | Any lane, at milestone ends |
 
 `reports/` holds probe and review results, named by task. `packets/` holds work written for another lane to run. `closeouts/` holds end-of-milestone summaries.

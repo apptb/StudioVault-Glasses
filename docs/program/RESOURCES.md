@@ -16,6 +16,8 @@ This repository is public. Host names, local paths, ports of private services an
 | deepseek-recipe | `deepseek-ai/deepseek-recipe` | 0.2 | MIT. Rust libraries with Python bindings that turn Messages, Chat Completions and Responses requests into DeepSeek V4 and V4.1 prompts and parse the output back, images included. The operator's two local proxies are built on it. |
 | Visual standard skill | `apptb/studiovault-universal-skills`, `skills/visual-standard/` | branch `claude/rayban-meta-glasses-assistant-cb0gqs` until its pull request merges | The operator's minimum for architecture output. Private repository. |
 | Archify | `tt-a1i/archify` | 3.2.0 | Apache-2.0. Do not install the unrelated npm package named `archify`. |
+| Reference client, watch | `borealBytes/hermes-wearos` | `50b65cd` (2026-11-12) | MIT. A Wear OS client for a self-hosted Hermes agent, with a Python Hermes plugin for pairing and an outbox. The app is Kotlin for Android, so the phone side borrows by pattern; the plugin's Python could be copied under MIT if O-16 allows. A committed binary of its embedded Tailscale node has no third-party notice; do not copy it. Read, and its unit tests run, on 2026-11-21; never run on a watch. See [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md). |
+| Reference client, room speaker | `RaYYeR220/housemate` | `09c1a1d` (2026-11-10) | MIT code. A Hermes plugin that turns browser pages into room speakers. The wake-word models it downloads are CC BY-NC-SA 4.0, non-commercial. Read, and its test suite run, on 2026-11-21; never run with a microphone or a Hermes. See [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md). |
 
 ## Models
 
@@ -99,6 +101,11 @@ Not chosen yet. Each is evaluated in the task named.
 | Spoken reply | AVSpeechSynthesizer | OS | M1-05 |
 | Read-only browser | Playwright MCP, isolated, origin allowlist; or a headless harness | Apache-2.0 | M3-04, M4-01 |
 | Mac app control | the computer-use permissions already granted on the Mac; cua-driver | MIT | M4-02 |
+| End of speech, no extra model | A watchdog on the growth of the recogniser's own partial transcript; pattern in `borealBytes/hermes-wearos`, `app/src/main/java/dev/hermes/wearos/domain/Vad.kt` | MIT; pattern only | M1-04 (a further task is proposed in REFERENCE-CLIENTS.md) |
+| End of speech by silence, as a state machine | The silence run, minimum speech, cap and kept tail around a voice-activity detector in `RaYYeR220/housemate`, `core/endpointer.py` | MIT; port, not lift | M1-04 (a further task is proposed in REFERENCE-CLIENTS.md) |
+| Wake phrase, third candidate (stock phrase only) | The openWakeWord pipeline as rebuilt in `RaYYeR220/housemate`, `core/wake.py`, with the stock "hey jarvis" head; the authors' custom head missed their bar. Python on a server, so the phone needs a port | Code MIT; model files CC BY-NC-SA 4.0, non-commercial. Only if O-14 allows | M2-02 |
+| Spoken confirmation parser | `RaYYeR220/housemate`, `core/intents.py`: a whole-utterance yes or no, standard library only | MIT | M3-06 (a further task is proposed in REFERENCE-CLIENTS.md) |
+| Latency bench and number check | `RaYYeR220/housemate`, `bench/run.py` (scripted client) and `scripts/render_numbers.py` (fills numbers in prose from result files) | MIT | M1-07, M1-09 (a further task is proposed in REFERENCE-CLIENTS.md) |
 | Ruled out | Picovoice Porcupine: free tier ended 2026-06-30 | commercial | none |
 
 ## Identifiers and credentials
@@ -126,3 +133,5 @@ Filled in as the operator creates them. Record names only. Values never; locatio
 | `gateway/README.md` | The two-speed turn idea: answer fast, deliver late results later |
 | `gateway/src/turn.ts` lines 12-26 | The automatic approval this build must not copy |
 | `samples/CLAUDE.md` | Upstream's iOS and Android parity rule, which D-11 sets aside |
+
+For the two reference clients, the files worth reading are listed with line numbers in [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md), section 2.

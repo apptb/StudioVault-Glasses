@@ -13,7 +13,7 @@ Acceptance for every task through M5 is in [PLAN.md](PLAN.md) section 6 under th
 ## M0 · Ground truth and a signed build
 
 - [ ] **M0-01** Ratify decisions D-01 to D-12 or amend them · owner:operator · gate:OP · state:queued
-- [ ] **M0-02** Answer the open questions O-1 to O-10 · owner:operator · gate:OP · state:queued
+- [ ] **M0-02** Answer the open questions O-1 to O-17 · owner:operator · gate:OP · state:queued
 - [ ] **M0-03** Reach probe: what this lane can read, write and run · owner:any · gate:R0 · state:queued
 - [ ] **M0-04** Fabric probe: local routes, an image through LiteLLM, an image with a tool call · owner:any · gate:R0 · state:queued
 - [ ] **M0-05** Approve frontier API keys and their LiteLLM routes · owner:operator · gate:OP · state:queued

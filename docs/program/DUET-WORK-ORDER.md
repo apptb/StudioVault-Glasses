@@ -19,7 +19,7 @@ A plan already exists. It was written in cloud sessions that could read code, my
 In `apptb/StudioVault-Glasses`, branch `claude/rayban-meta-glasses-assistant-cb0gqs`, folder `docs/program/`:
 
 1. `README.md`: how the record is kept. Read this before you change anything.
-2. `PLAN.md`: requirements, what exists, twelve proposed decisions (D-01 to D-12), the target architecture, acceptance for every task, risks, and ten questions for me (O-1 to O-10).
+2. `PLAN.md`: requirements, what exists, twelve proposed decisions (D-01 to D-12), the target architecture, acceptance for every task, risks, and seventeen questions for me (O-1 to O-17).
 3. `TODO.md`: the task board. Task ids below refer to it.
 4. `RESOURCES.md`: repositories, models, the agent harnesses on my Mac, Meta and Apple requirements.
 
@@ -35,7 +35,7 @@ Work in this order. Each step says what it needs, because you may not have the r
 
 **A1. Find out what you can reach (M0-03).** Can you read and write the repository? Can you run a command on my Mac Studio by any route you have? The test for the Mac is simple: run `hostname` there and read the answer back. My own notes say I have not set up a route from you to the new Mac, so expect that to fail and say so plainly. A lane that is absent is a finding to record.
 
-**A2. Bring me the decisions and questions as one short ballot (M0-01, M0-02).** Twelve decisions with their defaults and ten questions. Put each in one or two plain sentences with the default first, so I can answer "yes to all, except..." without opening the plan. Three decisions already carry my words from 2026-11-21 (D-01, D-04, D-09); show them as already given.
+**A2. Bring me the decisions and questions as one short ballot (M0-01, M0-02).** Twelve decisions with their defaults and seventeen questions. Put each in one or two plain sentences with the default first, so I can answer "yes to all, except..." without opening the plan. Three decisions already carry my words from 2026-11-21 (D-01, D-04, D-09); show them as already given.
 
 **A3. Write the probe packets (M0-04, M0-06).** Both probes need a shell on the Mac and a scoped model key that I provide; neither may print a key. If you have the shell, run them. If not, write each as a packet in `docs/program/packets/`: the exact commands, what each should return, and where the result file goes (`docs/program/reports/M0-04-fabric-probe.md`, `docs/program/reports/M0-06-frontier-probe.md`). A local Claude Code session or one of my headless harnesses will run them. The local probe must show an image going through my router and coming back described correctly, on a Mac route and on a DGX route, and one request that carries an image and a tool definition. The frontier probe sends the same photo and question through each frontier route and records time to first token, total time and cost. I care most about these two results: the design assumes they work and nobody has tried.
 

@@ -2,7 +2,7 @@
 
 Status: **proposed**, revised 2026-11-21 after the operator's second brief. Nothing here is built. Nothing on the operator's machines was probed: the plan was written in a cloud session that could read code, an uploaded execution log and the web, and could not reach the Mac Studio, the DGX pair, a phone or the glasses.
 
-Work id `GLASSES-1`. Readers: Duet (the operator's Claude cloud thread) and Claude Code. The task board is [TODO.md](TODO.md); every task id below is a line there.
+Work id `GLASSES-1`. Readers: Duet (the operator's Claude cloud thread) and Claude Code. The task board is [TODO.md](TODO.md); every task id below is a line there. A study of two reference clients for the Hermes agent is in [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md). Its proposals are not adopted until the operator rules on them.
 
 This repository is public. Host names, file paths, key locations and anything else that identifies the operator's machines stay out of it. The operator holds a private notes file with those details and attaches it when a task needs them.
 
@@ -90,6 +90,18 @@ Confidence marks: **read** means read directly in a file in this session; **log*
 | Unsloth Studio serves local models on OpenAI-style and Anthropic-style endpoints with tool calling. An open issue from September 2026 reports about 1.2 seconds of fixed overhead per request on its API. Studio connects to MCP servers as a client; a server that exposes Studio itself is a feature request. | web |
 | DSH runs one task and exits with `dsh --profile headless "task"`; `--json` streams events. OpenCode's equivalent is `opencode run`. Pi has a print mode and a JSON-lines RPC mode. | web |
 | Picovoice Porcupine ended its free tier on 2026-06-30. | web |
+### 2.4 Reference clients
+
+Two public projects the operator pointed to on 2026-11-21 as a related part of the infrastructure to take inspiration from. Six readers read them and two verifiers checked each finding against the files. What the plan could take, what does not transfer, and the numbers are in [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md). Nothing from it is adopted yet.
+
+| Fact | Evidence | Confidence |
+|---|---|---|
+| `borealBytes/hermes-wearos` at `50b65cd` (2026-11-12) is a Wear OS watch client for a self-hosted Hermes agent, under MIT. It sends each ask to Hermes's own runs interface under an idempotency key, reads an event stream with a status poller beside it, and settles the answer once. It has no wake word and no spoken approval, and its client can approve for the wearer. | `app/src/main/java/dev/hermes/wearos/net/HermesApi.kt:17-31`; `app/src/main/java/dev/hermes/wearos/domain/ChatSession.kt:518-586, 686-696, 1437-1440` | read; its 528 JVM unit tests passed here; never run on a watch or against a Hermes |
+| `RaYYeR220/housemate` at `09c1a1d` (2026-11-10) is a Hermes plugin that turns browser pages into room speakers, under MIT. The wake-word models it downloads are CC BY-NC-SA 4.0, non-commercial. Wake word and end of speech run on the server over a microphone stream that is always open. A spoken "approve" resolves Hermes's command approval, a delete included. | `core/wake.py:1-12`, `core/models.py:41-42`, `core/intents.py:34-84`, `JUDGES.md:53-59` | read; its test suite ran here (556 passed, 4 skipped, 10 deselected); never run with a browser, a microphone or a Hermes |
+| The room speaker's published 2.6 seconds from end of speech to first reply audio was measured by a script on the hub's own PC, 28 commits before the pinned one, on two synthetic clips, with replies of one word in all but one run, and a hosted text model. No microphone, loudspeaker, image, tool call or device-to-hub network hop was in the loop. | `results/latency.json:42-79` | read (the result file); not measured again |
+| The room speaker's authors trained a custom wake phrase four times, missed their own bar (90% recall at no more than 0.5 false accepts an hour) and did not ship it. | `wakeword/MODEL_CARD.md:3-11` | read; the figures are the authors' statement, with no raw report in the repository |
+| Neither project has a measurement of end of speech to first spoken word on a worn device, of battery cost, or of a wake word through a real microphone. | search by two verifiers | read (absence, not a statement) |
+| Hermes's runs interface offers idempotent submit that refuses a reused key with a different body, an event stream, a status read and approval by request id. Its approval answers include grants wider than one action, except for a request carrying a room grant token, which may answer only once or deny. Whether a photo survives it was not checked. | `gateway/platforms/api_server_runs.py:285-300, 559-564, 1370-1381` in a checkout of `NousResearch/hermes-agent` `main` at `242315c` (2026-11-09), not a release tag | read by one reader and one reviewer; unverified on a running Hermes |
 
 ## 3. Decisions
 
@@ -275,7 +287,7 @@ No feature code. M0 ends when the upstream app, renamed and re-signed as the ope
 | Task | Acceptance |
 |---|---|
 | M0-01 | Each of D-01 to D-12 has a ledger `gate` line quoting the operator's words: ratified, amended, or rejected. |
-| M0-02 | Each of O-1 to O-10 has an answer or an explicit "decide later" from the operator, logged. |
+| M0-02 | Each of O-1 to O-17 has an answer or an explicit "decide later" from the operator, logged. |
 | M0-03 | A ledger `probe` line lists, for the lane that ran it: repository read and write; a shell on the Mac (pass: `hostname` runs there and its output is read back); any other tool that reaches the Mac. An absent lane is a result, not a failure. |
 | M0-04 | `docs/program/reports/M0-04-fabric-probe.md` shows: the LiteLLM route list; one image request through LiteLLM answered correctly on a Mac route and on a DGX route; one request with an image and a tool definition returning a well-formed tool call; time to first token and total time for each. The probe uses a scoped key the operator provides and prints no key. If a check fails, the failure is the finding. |
 | M0-05 | The operator's approval is quoted in the ledger. LiteLLM has a route for each frontier API the operator chose and a preimage of its configuration. Keys are recorded by name and location in the operator's private notes only. |
@@ -390,7 +402,7 @@ Standing constraints:
 
 ## 9. Questions for the operator
 
-Answering these is `M0-02`. None blocks M0-03.
+Answering these is `M0-02`. None blocks M0-03. O-11 to O-17 come from the study of 2026-11-21 in [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md).
 
 | # | Question | Why it matters |
 |---|---|---|
@@ -404,6 +416,13 @@ Answering these is `M0-02`. None blocks M0-03.
 | O-8 | Which frontier accounts have API keys ready, which OpenAI model do you want, and what is the daily spend cap? | M0-05 |
 | O-9 | Should the working code live in a new private repository (the default) or in this public fork? | M0-07 and D-12 |
 | O-10 | How should an agent reach the Mac: a folder shared with a cloud session through Remote Control, a local Claude Code session, or another route you name? | Everything that needs a shell |
+| O-11 | Section 2.2 records Hermes installed on the Mac with its gateway running. Do you count it as part of the fabric the glasses may use? If you do, should a glasses turn (a) stay on the gateway in D-03, (b) pass through the gateway to Hermes for A0 and A1 work, or (c) go to Hermes directly as a client or a platform plugin? | D-03, D-08, D-09. Decides whether the Hermes probe proposed in REFERENCE-CLIENTS.md section 5 runs. Options (b) and (c) change D-03; (b) keeps D-08 only with a Hermes profile limited to A0 and A1 tools; (c) needs D-08 rewritten |
+| O-12 | D-08 has the plan read aloud before an A2 action. The room speaker speaks only a short description and shows the whole command on a screen. Should the glasses read the whole plan aloud, or speak a short description with the whole action shown on the phone? For which kinds of action must the answer be a tap? | R8, D-08, M3-06, M4-02 |
+| O-13 | R12 says the assistant can speak first. The two reference clients split. The watch stays silent outside the chat on screen and sends a notification. The room speaker speaks unprompted: timer rings, announcements, cron deliveries and reminders are spoken in the room. M3-05 already speaks a late result on the next wake. Should a due reminder or a late result be spoken unprompted, or signalled by a tone or notification and spoken on the next wake? | R12, M3-05, M6-01 |
+| O-14 | Is your use of a wake word non-commercial? The only working open wake word seen in the reference study uses models under a non-commercial licence. | Whether it can be a third candidate in M2-02 |
+| O-15 | What pass bar do you want for a custom wake phrase, set before any spotter is scored? The room speaker's authors chose 90% recall at no more than 0.5 false accepts an hour, and missed it. Will you record your own voice saying the phrase and near-miss phrases? | M2-02, M2-04, M2-06, and the measurement protocol proposed in REFERENCE-CLIENTS.md |
+| O-16 | May MIT code from the two reference projects be copied into the working repository with its notice (the spoken-answer parser, the bench script), or are they a source of patterns only? | D-12; depends on the gateway's language, which the plan does not fix |
+| O-17 | A confirmation expires after 60 seconds (M3-06). For how much of that should the glasses microphone stay open without a new trigger, and may a new trigger inside the 60 seconds carry the answer? The room speaker listens without a wake word for 10 seconds and keeps the answer armed for 310 seconds, during which any utterance from the asked device is taken as the answer. | M3-06, M2-03: each open second holds the hands-free profile |
 
 **Answered so far**, by the survey of the Mac on 2026-11-24. The operator can still correct any of these.
 
@@ -425,4 +444,4 @@ Handoff between lanes is a push. The receiving lane pulls, runs `ledger.py statu
 
 ## 11. How this plan was made
 
-Five research passes on 2026-11-20 covered the fork's iOS code, the operator's execution log, Meta's toolkit and Xcode Cloud, wake-phrase options and task-lane options. Upstream and Archify were read directly. On 2026-11-21 two independent reviewers checked the first version: one read the Duet work order cold, one checked citations against their sources. Their findings are in this revision. A second research round covered deepseek-recipe, Unsloth Studio, the DeepSeek platform and the headless modes of DSH, Pi and OpenCode. Claims marked **web** rest on one researcher each; treat them as leads to confirm at the task that depends on them.
+Five research passes on 2026-11-20 covered the fork's iOS code, the operator's execution log, Meta's toolkit and Xcode Cloud, wake-phrase options and task-lane options. Upstream and Archify were read directly. On 2026-11-21 two independent reviewers checked the first version: one read the Duet work order cold, one checked citations against their sources. Their findings are in this revision. A second research round covered deepseek-recipe, Unsloth Studio, the DeepSeek platform and the headless modes of DSH, Pi and OpenCode. Claims marked **web** rest on one researcher each; treat them as leads to confirm at the task that depends on them. On 2026-11-21 the operator pointed to two public projects: a Wear OS watch client and a room-speaker plugin, both for the Hermes agent. Six readers studied them and two verifiers checked each finding against the files. The watch app's unit tests and the room speaker's test suite were run; nothing was run on a device or against a real Hermes. The result is in [REFERENCE-CLIENTS.md](REFERENCE-CLIENTS.md). Its proposals are not adopted until the operator rules on them.

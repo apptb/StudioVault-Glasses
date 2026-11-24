@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/base.json",
+    "sha256": "afd5194b5cf8fe2783392a1e96f3f76c0bc11145d008a3e0b65823f50f5397bc",
+    "bytes": 8468
+  },
+  "artifact": {
+    "path": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.base.html",
+    "sha256": "2270ba0b6448e03ed0e76c7ad8ea5665ea7f073dcf5551d5c459febc7f11faf3",
+    "bytes": 850732
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.base.finalize.json",
+    "summaryReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.base.finalize-summary.json",
+    "browserCheckReceipt": "/tmp/claude-0/-home-user/81ba7bb0-ae09-5ce3-9d0d-f176496d9fde/scratchpad/final/docs/architecture/glasses-assistant/glasses-assistant.base.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-21T00:09:01.665Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3152,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

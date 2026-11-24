@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Glasses Assistant - As Found",
+    "output": "docs/architecture/glasses-assistant/glasses-assistant.base.html",
+    "subtitle": "As found on 2026-11-20. The phone app calls four vendor clouds directly. No path was found from it to the model router on the Mac or to the DGX pair.",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/apptb/StudioVault-Glasses",
+      "provider": "github",
+      "revision": "73c53185fc2498419d082286806a4237c2d47726"
+    }
+  },
+  "components": [
+    {
+      "id": "github",
+      "type": "external",
+      "label": "GitHub",
+      "sublabel": "apptb/StudioVault-Glasses",
+      "tag": "live",
+      "pos": [
+        40,
+        36
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "glasses",
+      "type": "external",
+      "label": "Ray-Ban Meta",
+      "sublabel": "camera · mic · speakers",
+      "tag": "configured",
+      "pos": [
+        40,
+        232
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Glasses app (iOS)",
+      "sublabel": "Matcha fork · DAT SDK 0.4",
+      "tag": "configured",
+      "sources": [
+        {
+          "path": "samples/CameraAccess/CameraAccess.xcodeproj/project.pbxproj",
+          "line": 976,
+          "end_line": 983,
+          "label": "DAT SDK pin 0.4.0"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Agent/AgentBridge.swift",
+          "line": 255,
+          "end_line": 279,
+          "label": "E2B sandbox request with access tokens"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Settings/SettingsManager.swift",
+          "line": 3,
+          "end_line": 7,
+          "label": "Agent backends"
+        }
+      ],
+      "pos": [
+        310,
+        232
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "vendor_clouds",
+      "type": "external",
+      "label": "Vendor clouds",
+      "sublabel": "Gemini, Azure, E2B, Vercel",
+      "tag": "configured",
+      "sources": [
+        {
+          "path": "samples/CameraAccess/CameraAccess/Gemini/GeminiConfig.swift",
+          "line": 4,
+          "label": "Gemini Live endpoint"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Azure/AzureRealtimeConfig.swift",
+          "line": 104,
+          "label": "Azure realtime endpoint"
+        },
+        {
+          "path": "samples/CameraAccess/CameraAccess/Agent/AgentBridge.swift",
+          "line": 362,
+          "end_line": 366,
+          "label": "Vercel fallback call"
+        }
+      ],
+      "pos": [
+        534,
+        36
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "litellm",
+      "type": "backend",
+      "label": "LiteLLM router",
+      "sublabel": "local routes · per log",
+      "tag": "configured",
+      "pos": [
+        920,
+        492
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "localmodels",
+      "type": "backend",
+      "label": "Local models",
+      "sublabel": "rapid-mlx · oMLX · proxies",
+      "tag": "configured",
+      "pos": [
+        1190,
+        492
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "unsloth",
+      "type": "backend",
+      "label": "Unsloth Studio",
+      "sublabel": "installed · host unknown",
+      "tag": "configured",
+      "pos": [
+        1190,
+        250
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "vault",
+      "type": "database",
+      "label": "Obsidian vault",
+      "sublabel": "intake notes · daily brief",
+      "tag": "configured",
+      "pos": [
+        640,
+        632
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Daily synthesis worker",
+      "sublabel": "brief + audio + archify",
+      "tag": "configured",
+      "pos": [
+        920,
+        632
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "dgx_glm",
+      "type": "backend",
+      "label": "GLM server",
+      "sublabel": "GLM-5.3 · vision untested",
+      "tag": "configured",
+      "pos": [
+        1190,
+        148
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "iPhone",
+      "wraps": [
+        "app"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Mac Studio",
+      "wraps": [
+        "litellm",
+        "localmodels",
+        "vault",
+        "worker"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "2x DGX Spark cluster",
+      "wraps": [
+        "dgx_glm"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Public internet",
+      "wraps": [
+        "vendor_clouds"
+      ],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "glasses-app",
+      "from": "glasses",
+      "to": "app",
+      "label": "DAT · HFP in/out",
+      "variant": "emphasis",
+      "labelDx": -11
+    },
+    {
+      "id": "app-vendors",
+      "from": "app",
+      "to": "vendor_clouds",
+      "label": "voice, video, tasks, access tokens",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "labelAt": [
+        519,
+        158
+      ]
+    },
+    {
+      "id": "litellm-local",
+      "from": "litellm",
+      "to": "localmodels",
+      "label": "local routes"
+    },
+    {
+      "id": "litellm-dgx",
+      "from": "litellm",
+      "to": "dgx_glm",
+      "label": "glm routes",
+      "fromSide": "top",
+      "toSide": "left",
+      "labelDy": 27
+    },
+    {
+      "id": "worker-vault",
+      "from": "worker",
+      "to": "vault",
+      "label": "daily brief"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "What is missing",
+      "items": [
+        "No path from the phone to the model router on the Mac: per the operator's log the router listens on a loopback port",
+        "No hands-free trigger, no single photo question, no task lane on the operator's Mac stack",
+        "The phone app holds vendor keys, calls four vendor clouds directly and, on its default E2B backend, sends the Google and Notion access tokens of linked accounts to the vendor sandbox with each task (read in code, not observed running)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Where this comes from",
+      "items": [
+        "The app and its vendors were read from the fork at commit 73c5318: the SDK pin in project.pbxproj, the endpoints in GeminiConfig.swift and AzureRealtimeConfig.swift, the sandbox request, the tokens and the Vercel fallback in AgentBridge.swift",
+        "The fork also carries an OpenClaw backend aimed at a gateway on a Mac on the local network, and a StudioVaultMCP backend that is a stub. Whether OpenClaw was ever configured is not known; neither is drawn",
+        "On the Mac and the DGX pair, tagged configured means set up per the operator's log of 2026-11-20, not probed. The app and the vendor endpoints are tagged configured because they were read in source and not seen running",
+        "Unsloth Studio is installed per the operator; its machine and port are not recorded (open question O-3), so it is drawn outside the machine frames",
+        "Image input on the DGX model is claimed in the log and has not been tested"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Reading the lines",
+      "items": [
+        "Teal, thick: the main path, glasses to the phone app",
+        "Pink (red in the light theme), dashed: leaves the private network. Here it carries the rest of the main path, from the app to the vendor clouds",
+        "Private network here means the operator's own devices: the phone, the Mac and the DGX pair. As found, no link from the phone to the other two is recorded, and how the Mac reaches the DGX pair is per the operator's log, not probed",
+        "Grey: links on the Mac and the DGX pair that the phone does not reach",
+        "Not drawn: what the platforms do on their own. Meta's assistant and its phone app carry the glasses link, the phone may sync through iCloud, and the vault follows whatever sync the operator already runs. None of this was checked"
+      ]
+    }
+  ]
+}

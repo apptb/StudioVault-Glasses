@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "compare",
+  "type": "architecture",
+  "comparatorVersion": 1,
+  "canonicalVersion": 1,
+  "completeness": "complete",
+  "proofLevel": "revision-pinned",
+  "base": {
+    "title": "Glasses Assistant - As Found",
+    "rawSha256": "afd5194b5cf8fe2783392a1e96f3f76c0bc11145d008a3e0b65823f50f5397bc",
+    "semanticSha256": "c538289874414ba684871036dac0c39e7c8e39dd99e37576e3b751718df42be7",
+    "bytes": 8468,
+    "revision": "73c53185fc2498419d082286806a4237c2d47726"
+  },
+  "head": {
+    "title": "Glasses Assistant - Target (planned)",
+    "rawSha256": "f6eff06b5483a1f240afb6dd4603e96a222f079b7b62346e0255706bdf7b8b4f",
+    "semanticSha256": "84e1e36e1814bb027f0a8ab8e0617d163ea8067c8ae49d4c9eba75dd30289997",
+    "bytes": 14538,
+    "revision": "73c53185fc2498419d082286806a4237c2d47726"
+  },
+  "summary": {
+    "components": {
+      "added": 9,
+      "changed": 5,
+      "evidenceChanged": 0,
+      "removed": 1,
+      "moved": 0
+    },
+    "connections": {
+      "added": 15,
+      "changed": 2,
+      "removed": 1,
+      "rerouted": 0
+    },
+    "boundaries": {
+      "added": 1,
+      "changed": 3,
+      "removed": 0,
+      "geometryChanged": 0
+    },
+    "presentationChanged": true,
+    "provenanceChanged": false
+  },
+  "changes": {
+    "components": [
+      {
+        "id": "app",
+        "baseLabel": "Glasses app (iOS)",
+        "headLabel": "Glasses app (iOS)",
+        "status": "changed",
+        "classifications": [
+          "evidence",
+          "semantic"
+        ],
+        "changedFields": [
+          "/sources",
+          "/sublabel"
+        ]
+      },
+      {
+        "id": "eventkit",
+        "headLabel": "Reminders",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "frontier_apis",
+        "headLabel": "Frontier APIs",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "ggw",
+        "headLabel": "Glasses gateway",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "github",
+        "baseLabel": "GitHub",
+        "headLabel": "GitHub",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
+      },
+      {
+        "id": "harness",
+        "headLabel": "Harness lane",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "litellm",
+        "baseLabel": "LiteLLM router",
+        "headLabel": "LiteLLM router",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
+      },
+      {
+        "id": "turn",
+        "headLabel": "Turn engine",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "turnlog",
+        "headLabel": "Turn log + traces",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "unsloth",
+        "baseLabel": "Unsloth Studio",
+        "headLabel": "Unsloth Studio",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
+      },
+      {
+        "id": "vendor_clouds",
+        "baseLabel": "Vendor clouds",
+        "status": "removed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "wake",
+        "headLabel": "Wake trigger",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "web",
+        "headLabel": "Public web",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "worker",
+        "baseLabel": "Daily synthesis worker",
+        "headLabel": "Daily synthesis worker",
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/sublabel"
+        ]
+      },
+      {
+        "id": "xcloud",
+        "headLabel": "Xcode Cloud",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      }
+    ],
+    "connections": [
+      {
+        "id": "app-vendors",
+        "base": {
+          "from": "app",
+          "to": "vendor_clouds",
+          "label": "voice, video, tasks, access tokens"
+        },
+        "status": "removed",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "app-wake",
+        "head": {
+          "from": "app",
+          "to": "wake",
+          "label": "launch · button"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "ggw-harness",
+        "head": {
+          "from": "ggw",
+          "to": "harness",
+          "label": "price check · browse"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "ggw-litellm",
+        "head": {
+          "from": "ggw",
+          "to": "litellm",
+          "label": "chat + image"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "ggw-turnlog",
+        "head": {
+          "from": "ggw",
+          "to": "turnlog",
+          "label": "turn log"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "ggw-vault",
+        "head": {
+          "from": "ggw",
+          "to": "vault",
+          "label": "save note"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "gh-xcloud",
+        "head": {
+          "from": "github",
+          "to": "xcloud",
+          "label": "manual start · build"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "harness-litellm",
+        "head": {
+          "from": "harness",
+          "to": "litellm",
+          "label": "model calls"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "harness-web",
+        "head": {
+          "from": "harness",
+          "to": "web",
+          "label": "HTTPS · queries, no writes"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "litellm-dgx",
+        "base": {
+          "from": "litellm",
+          "to": "dgx_glm",
+          "label": "glm routes"
+        },
+        "head": {
+          "from": "litellm",
+          "to": "dgx_glm",
+          "label": "phase 2 · glm"
+        },
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/label"
+        ]
+      },
+      {
+        "id": "litellm-frontier",
+        "head": {
+          "from": "litellm",
+          "to": "frontier_apis",
+          "label": "phase 1 · photo + prompts"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "litellm-local",
+        "base": {
+          "from": "litellm",
+          "to": "localmodels",
+          "label": "local routes"
+        },
+        "head": {
+          "from": "litellm",
+          "to": "localmodels",
+          "label": "phase 2 · local"
+        },
+        "status": "changed",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": [
+          "/label"
+        ]
+      },
+      {
+        "id": "litellm-unsloth",
+        "head": {
+          "from": "litellm",
+          "to": "unsloth",
+          "label": "phase 2 · unsloth"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "turn-eventkit",
+        "head": {
+          "from": "turn",
+          "to": "eventkit",
+          "label": "create reminder"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "turn-ggw",
+        "head": {
+          "from": "turn",
+          "to": "ggw",
+          "label": "HTTPS · tailnet"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "turnlog-worker",
+        "head": {
+          "from": "turnlog",
+          "to": "worker",
+          "label": "ingest"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "wake-turn",
+        "head": {
+          "from": "wake",
+          "to": "turn",
+          "label": "start a turn"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "xcloud-app",
+        "head": {
+          "from": "xcloud",
+          "to": "app",
+          "label": "TestFlight build"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      }
+    ],
+    "boundaries": [
+      {
+        "key": "region:Build services (GitHub · Apple)",
+        "kind": "region",
+        "label": "Build services (GitHub · Apple)",
+        "status": "added",
+        "classifications": [
+          "scope"
+        ],
+        "changedFields": []
+      },
+      {
+        "key": "region:Mac Studio",
+        "kind": "region",
+        "label": "Mac Studio",
+        "status": "changed",
+        "classifications": [
+          "scope"
+        ],
+        "changedFields": [
+          "/wraps"
+        ]
+      },
+      {
+        "key": "region:iPhone",
+        "kind": "region",
+        "label": "iPhone",
+        "status": "changed",
+        "classifications": [
+          "scope"
+        ],
+        "changedFields": [
+          "/wraps"
+        ]
+      },
+      {
+        "key": "security-group:Public internet",
+        "kind": "security-group",
+        "label": "Public internet",
+        "status": "changed",
+        "classifications": [
+          "scope"
+        ],
+        "changedFields": [
+          "/wraps"
+        ]
+      }
+    ]
+  },
+  "identity": {
+    "components": "components[].id",
+    "connections": "connections[].id (required)",
+    "boundaries": "boundaries[].kind + boundaries[].label (derived)"
+  },
+  "view": {
+    "visualPreset": "signal-flow"
+  },
+  "limitations": [
+    "Authored Architecture IR only; no runtime impact, causality, risk, or mergeability is inferred.",
+    "Boundary identity is conservatively derived from kind + label."
+  ],
+  "artifact": {
+    "sha256": "d6eb990d4e8da0b6a3aca2ec167e34a34e5f97f066df26dd0b3b5d66128f85b5",
+    "bytes": 2471198
+  },
+  "validation": {
+    "checksPassed": 28,
+    "checkCount": 28,
+    "baseComposition": "pass",
+    "headComposition": "pass"
+  }
+}
